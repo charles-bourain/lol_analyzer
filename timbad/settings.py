@@ -27,6 +27,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+RIOT_API_KEY = '07f7018c-7a66-4566-8fce-bc6f9c94b13d'
+RIOT_REQUEST_BASE = {
+'NA':"https://na.api.pvp.net/",
+}
+
 
 # Application definition
 
@@ -37,6 +42,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'heroes',
+    'items',
 )
 
 MIDDLEWARE_CLASSES = (
