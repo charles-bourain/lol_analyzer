@@ -1,0 +1,14 @@
+{% extends 'site_base.html' %}
+
+
+{% block body%}
+
+    <h1> THE HERO LIST </h1>
+
+    {% for i in heroes %}
+        <li>{{ i.riot_id }}, {{i.name}} </li>
+    {% endfor %}
+
+
+
+{% endblock %}
