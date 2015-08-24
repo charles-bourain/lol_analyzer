@@ -5,8 +5,13 @@
 
     <h1> THE HERO LIST </h1>
 
+    <form method = 'post' action = '.' name = 'get_details'> 
+    {% csrf_token %} 
+    <button>GET CHAMPION DETAILS</button>
+    </form>
+
     {% for i in heroes %}
-        <li>{{ i.riot_id }}, {{i.name}} </li>
+        <a href = {% url 'hero_detail' i.riot_id %} ><li>{{ i.riot_id }}, {{i.name}} </li></a>
     {% endfor %}
 
 

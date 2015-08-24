@@ -14,3 +14,40 @@ def request_all_champion_info():
         hero, created = Hero.objects.get_or_create(name = hero_data[item]['name'], riot_id = hero_data[item]['id'])
         if created == True:
             hero.save()
+
+
+
+def request_champion_details(riot_id):
+    champion = Hero.objects.get(riot_id = riot_id)
+    champion_detail_url = 'https://global.api.pvp.net/api/lol/static-data/na/v1.2/champion/%s?champData=image,info,partype,stats,tags&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d' % riot_id
+    champion_detail_request = requests.get(champion_detail_url).json()
+    champion.tag = str(champion_detail_request['tags'])
+    champion.attackrange = champion_detail_request['stats']['attackrange']
+    champion.mpperlevel = champion_detail_request['stats']['mpperlevel']
+    champion.mp = champion_detail_request['stats']['mp']
+    champion.attackdamage = champion_detail_request['stats']['attackdamage']
+    champion.hp = champion_detail_request['stats']['hp']
+    champion.hpperlevel = champion_detail_request['stats']['hpperlevel']
+    champion.attackdamageperlevel = champion_detail_request['stats']['attackdamageperlevel']
+    champion.armor = champion_detail_request['stats']['armor']
+    champion.mpregenperlevel = champion_detail_request['stats']['mpregenperlevel']
+    champion.hpregen = champion_detail_request['stats']['hpregen']
+    champion.critperlevel = champion_detail_request['stats']['critperlevel']
+    champion.spellblockperlevel = champion_detail_request['stats']['spellblockperlevel']
+    champion.mpregen = champion_detail_request['stats']['mpregen']
+    champion.attackspeedperlevel = champion_detail_request['stats']['attackspeedperlevel']
+    champion.spellblock = champion_detail_request['stats']['spellblock']
+    champion.movespeed = champion_detail_request['stats']['movespeed']
+    champion.attackspeedoffset = champion_detail_request['stats']['attackspeedoffset']
+    champion.crit = champion_detail_request['stats']['crit']
+    champion.hpregenperlevel = champion_detail_request['stats']['hpregenperlevel']
+    champion.armorperlevel = champion_detail_request['stats']['armorperlevel']
+    champion.save()
+
+def get_all_champion_details():
+    heroes = Hero.objects.all()
+    for hero in heroes:
+        try:
+            Hero.objects.get(riot_id = hero.riot_id)
+        except:
+            request_champion_details(hero.riot_id)

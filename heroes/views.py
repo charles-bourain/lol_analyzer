@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from heroes.utils import request_all_champion_info
+from heroes.utils import request_all_champion_info, request_champion_details, get_all_champion_details
 from django.views.generic import TemplateView
 from heroes.models import Hero
 
@@ -9,8 +9,27 @@ class HeroList(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(HeroList, self).get_context_data(**kwargs)
-        request_all_champion_info()
         context['heroes'] = Hero.objects.all()
+        return context
+
+    def post(self, *args, **kwargs):
+            get_all_champion_details()
+
+
+class HeroDetail(TemplateView):
+    template_name = 'heroes/hero_detail.html'
+
+
+    def get_context_data(self, **kwargs):
+        context = super(HeroDetail, self).get_context_data(**kwargs)
+        riot_id = self.kwargs['riot_id']
+        try:
+            hero = Hero.objects.get(riot_id = riot_id)
+        except:
+            request_champion_details(riot_id)
+            hero = Hero.objects.get(riot_id = riot_id)
+        finally:
+            context['hero'] = hero
         return context
 
 
