@@ -11,7 +11,7 @@
     </form> -->
 
     {% for i in items %}
-        <a href = {% url 'hero_detail' i.riot_id %} ><li>{{ i.riot_id }}, {{i.name}} </li></a>
+        <li>{{ i.riot_id }}, {{i.name}} </li>
     {% endfor %}
 
 
