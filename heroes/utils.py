@@ -1,5 +1,5 @@
 from django.conf import settings
-from heroes.models import Hero
+from heroes.models import Hero, HeroTag
 import json
 import requests
 
@@ -12,6 +12,7 @@ def request_all_champion_info():
     for item in hero_data:
         champion_data_list.append(hero_data[item])
         hero, created = Hero.objects.get_or_create(name = hero_data[item]['name'], riot_id = hero_data[item]['id'])
+        print hero.name
         if created == True:
             hero.save()
 
@@ -19,9 +20,10 @@ def request_all_champion_info():
 
 def request_champion_details(riot_id):
     champion = Hero.objects.get(riot_id = riot_id)
+    print champion.name, ', GOT FOR DETAILS'
     champion_detail_url = 'https://global.api.pvp.net/api/lol/static-data/na/v1.2/champion/%s?champData=image,info,partype,stats,tags&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d' % riot_id
     champion_detail_request = requests.get(champion_detail_url).json()
-    champion.tag = str(champion_detail_request['tags'])
+    # champion.tag = str(champion_detail_request['tags'])
     champion.attackrange = champion_detail_request['stats']['attackrange']
     champion.mpperlevel = champion_detail_request['stats']['mpperlevel']
     champion.mp = champion_detail_request['stats']['mp']
@@ -43,6 +45,13 @@ def request_champion_details(riot_id):
     champion.hpregenperlevel = champion_detail_request['stats']['hpregenperlevel']
     champion.armorperlevel = champion_detail_request['stats']['armorperlevel']
     champion.save()
+
+    for tag in list(champion_detail_request['tags']):
+        print tag
+        champion_tag, created = HeroTag.objects.get_or_create(hero = champion, tag = tag)
+        if created == True:
+            champion_tag.save()
+
 
 def get_all_champion_details():
     heroes = Hero.objects.all()

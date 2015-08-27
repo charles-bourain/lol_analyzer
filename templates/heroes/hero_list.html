@@ -3,14 +3,14 @@
 
 {% block body%}
 
-    <h1> THE ITEM LIST </h1>
+    <h1> THE HERO LIST </h1>
 
-<!--     <form method = 'post' action = '.' name = 'get_details'> 
+    <form method = 'post' action = '.' name = 'get_details'> 
     {% csrf_token %} 
     <button>GET CHAMPION DETAILS</button>
-    </form> -->
+    </form>
 
-    {% for i in items %}
+    {% for i in heroes %}
         <a href = {% url 'hero_detail' i.riot_id %} ><li>{{ i.riot_id }}, {{i.name}} </li></a>
     {% endfor %}
 

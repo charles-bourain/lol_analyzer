@@ -3,11 +3,14 @@
 
 {% block body%}
 
-    <h1> HERO DETAIL </h1>
-
-        
+    <h1> HERO DETAIL: {{hero.name}} </h1>
          <li>{{ hero.riot_id }}</li>
-         <li> {{hero.tag }}</li>
+
+
+    <h2> Hero Tags: </h2>
+        {% for t in tags %}
+         	<li> {{ t.tag }}</li>
+     	{% endfor %}
 
 
 

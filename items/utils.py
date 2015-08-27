@@ -1,5 +1,5 @@
 from django.conf import settings
-from items.models import Item
+from items.models import Item, ItemTag
 import json
 import requests
 
@@ -9,16 +9,28 @@ def request_all_item_info():
     item_data_list = []
    
     for item in item_data:
-        print item_data[item]['name']
         item_data_list.append(item_data[item])
-        item, created = Item.objects.get_or_create(name = item_data[item]['name'], riot_id = item_data[item]['id'])
-        if created == True:
-            item.save()    
+        raw_tag = False
 
-# def get_all_champion_details():
-#     heroes = Hero.objects.all()
-#     for hero in heroes:
-#         try:
-#             Hero.objects.get(riot_id = hero.riot_id)
-#         except:
-#             request_champion_details(hero.riot_id)
+        try:
+            raw_tag = item_data[item]['tags']
+        except:
+            try:
+                raw_tag = item_data[item]['tag']
+            except:
+                pass
+
+        if raw_tag:
+            item, created = Item.objects.get_or_create(
+            name = item_data[item]['name'], 
+            riot_id = item_data[item]['id'])
+            for tag in list(raw_tag):
+                item_tag, tag_created = ItemTag.objects.get_or_create(item = item, tag = tag)
+                print item_tag.item, item_tag.tag
+                if tag_created == True:
+                    item_tag.save()
+            if created == True:
+                item.save()  
+
+
+              
