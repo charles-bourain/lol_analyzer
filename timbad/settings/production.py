@@ -11,12 +11,20 @@ base.INSTALLED_APPS += [
     'whitenoise',
 ]
 
+#STATIC FILE MANAGEMENT
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATIC_ROOT = os.path.join(base.BASE_DIR,'staticfiles')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = (
     os.path.join(base.BASE_DIR, 'static'),
 )
+
+# Parse database configuration from $DATABASE_URL
+import dj_database_url
+DATABASES = {
+    "default": dj_database_url.config(default='postgres://localhost'),
+}
+DATABASES['default']['CONN_MAX_AGE'] = 500
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
