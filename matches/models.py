@@ -10,7 +10,7 @@ from django.db import models
 
 
 class Match(models.Model):
-    match_id = models.PositiveIntegerField()
+    match_id = models.SlugField()
 
     def __unicode__(self):
             return "Match ID: "+unicode(self.match_id)
