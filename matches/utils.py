@@ -41,6 +41,7 @@ def update_matches_for_current_league_rankings(*args):
 
 
         for i in match_list:
+            print i
             match, created  = Match.objects.get_or_create(match_id = i['matchId'])
             if not created:
                 pass
