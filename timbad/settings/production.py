@@ -9,8 +9,6 @@ TEMPLATE_DEBUG = False
 
 base.INSTALLED_APPS += [
     'whitenoise',
-    'djrill',
-    'storages',
 ]
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
