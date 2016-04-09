@@ -1,1 +1,1 @@
-web: gunicorn ProjectSite.wsgi --log-file -
+web: gunicorn timbad.wsgi --log-file -
