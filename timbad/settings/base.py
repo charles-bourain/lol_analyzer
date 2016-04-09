@@ -20,14 +20,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'yn0(*)8#4v-j=l3#8u+mns2-eq=6c+0&&ym$kz=ddk*w+kt_#c'
+SECRET_KEY = os.environ.get('TIMBAD_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
-RIOT_API_KEY = '07f7018c-7a66-4566-8fce-bc6f9c94b13d'
+RIOT_API_KEY = os.environ.get('RIOT_API_KEY')
 RIOT_REQUEST_BASE = {
 'NA':"https://na.api.pvp.net/",
 }
