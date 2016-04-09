@@ -7,6 +7,7 @@ import json
 import requests
 
 def requester(url, request_type):
+    print 'REQUEST HIT'
     one_sec_time_del = datetime.timedelta(seconds = 1)
     ten_min_time_del = datetime.timedelta(seconds = 10*60)
 

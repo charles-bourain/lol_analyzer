@@ -1,10 +1,9 @@
 from django.conf import settings
 from items.models import Item, ItemTag
-import json
-import requests
+from request_manager.utils import requester
 
 def request_all_item_info():
-    all_item_request = requests.get('https://global.api.pvp.net/api/lol/static-data/na/v1.2/item?locale=en_US&itemListData=all&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d').json()
+    all_item_request = requester('https://global.api.pvp.net/api/lol/static-data/na/v1.2/item?locale=en_US&itemListData=all&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d','get')
     item_data = all_item_request['data']
     item_data_list = []
    
