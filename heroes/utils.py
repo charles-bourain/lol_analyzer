@@ -13,7 +13,6 @@ def request_all_champion_info():
     for item in hero_data:
         champion_data_list.append(hero_data[item])
         hero, created = Hero.objects.get_or_create(name = hero_data[item]['name'], riot_id = hero_data[item]['id'])
-        print hero.name
         if created == True:
             hero.save()
 
@@ -21,7 +20,6 @@ def request_all_champion_info():
 
 def request_champion_details(riot_id):
     champion = Hero.objects.get(riot_id = riot_id)
-    print champion.name, ', GOT FOR DETAILS'
     champion_detail_url = 'https://global.api.pvp.net/api/lol/static-data/na/v1.2/champion/%s?champData=image,info,partype,stats,tags&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d' % riot_id
     champion_detail_request = requester(champion_detail_url,'get')
     # champion.tag = str(champion_detail_request['tags'])

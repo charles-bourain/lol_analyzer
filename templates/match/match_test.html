@@ -1,0 +1,19 @@
+{% extends 'site_base.html' %}
+
+
+{% block body%}
+
+    <h1> {{ match.match_id }} </h1>
+
+<!--     <form method = 'post' action = '.' name = 'get_details'> 
+    {% csrf_token %} 
+    <button>GET CHAMPION DETAILS</button>
+    </form> -->
+    <ul>
+        {% for player in players %}      
+            <li>{{ player.champion }} -- {% if player.team %} Blue {% else %} Red {% endif %} -- Winner = {{player.winner}}</li>
+        {% endfor %}
+    <ul>
+
+
+{% endblock %}

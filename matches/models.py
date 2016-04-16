@@ -1,4 +1,8 @@
 from django.db import models
+from heroes.models import Hero
+from runes.models import PlayerRune
+from masteries.models import PlayerMastery
+from items.models import Item
 
 
 # To Gather Initial Data:
@@ -14,3 +18,42 @@ class Match(models.Model):
 
     def __unicode__(self):
             return "Match ID: "+unicode(self.match_id)
+
+class Player(models.Model):
+
+    match = models.ForeignKey(Match)
+    champion = models.ForeignKey(Hero)
+    runes = models.ManyToManyField(PlayerRune)
+    masteries = models.ManyToManyField(PlayerMastery)
+    item = models.ManyToManyField(Item)
+    winner = models.BooleanField(default = False)
+    json_response = models.CharField(max_length = 10000)
+    spell1 = models.IntegerField(default = 666)
+    spell2 = models.IntegerField(default = 666)
+    team = models.BooleanField(default = False) #JSON Response Conversion- '200'= True, '100'=False
+
+    totalDamageTaken = models.IntegerField(default = 0)
+    physicalDamageTaken = models.IntegerField(default = 0)
+    magicDamageTaken = models.IntegerField(default = 0)
+
+    sightWardsBoughtInGame = models.IntegerField(default = 0)
+    visionWardsBoughtInGame = models.IntegerField(default = 0)
+    wardsKilled = models.IntegerField(default = 0)
+    wardsPlaced = models.IntegerField(default = 0)
+    
+    deaths = models.IntegerField(default = 0)
+    assists = models.IntegerField(default = 0)
+    kills = models.IntegerField(default = 0)
+    
+    firstBloodAssist = models.BooleanField(default = False)
+    
+    magicDamageDealtToChampions =  models.IntegerField(default = 0)
+    physicalDamageDealtToChampions = models.IntegerField(default = 0)
+    totalDamageDealtToChampions = models.IntegerField(default = 0)
+    totalTimeCrowdControlDealt = models.IntegerField(default = 0)
+
+    minionsKilled = models.IntegerField(default = 0)
+    goldEarned = models.IntegerField(default = 0)
+
+    totalHeal = models.IntegerField(default = 0)
+ 

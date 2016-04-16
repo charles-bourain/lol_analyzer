@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'items',
     'matches',
     'request_manager',
+    'runes',
+    'masteries',
 ]
 
 MIDDLEWARE_CLASSES = (

@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import Item
+from .models import Rune
 
-admin.site.register(Item)
+admin.site.register(Rune)
 
 # Register your models here.
