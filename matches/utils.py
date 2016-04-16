@@ -31,7 +31,6 @@ def create_match_obj(match_id):
 
 
 def update_matches_for_current_league_rankings(*args):
-    print args
     if args == () or args == "master":
         league_player_list_url = "https://na.api.pvp.net/api/lol/na/v2.5/league/master?type=RANKED_SOLO_5x5&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d"
     elif args == "challenger":
@@ -57,6 +56,8 @@ def update_matches_for_current_league_rankings(*args):
 
 
         for i in match_list:
+            if Match.objects.count() <=5000:  # TEMP ADD - TO LIMIT DATABASE ENTRIES
+                exit()
             match, created  = Match.objects.get_or_create(match_id = i['matchId'])
             if not created:
                 pass
