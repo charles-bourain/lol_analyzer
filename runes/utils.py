@@ -6,9 +6,9 @@ def get_static_rune_data():
 
     rune_data = requester(rune_url, 'get')['data']
 
-    print rune_data[rune]['description']
 
     for rune in rune_data:
+        print rune_data[rune]['description']
         Rune.objects.get_or_create(
             runeId = rune_data[rune]['id'],
             name = rune_data[rune]['name'],
