@@ -9,7 +9,3 @@ class Mastery(models.Model):
     def __unicode__(self):
         return unicode(self.name)
 
-
-class PlayerMastery(models.Model):
-    mastery = models.ForeignKey(Mastery)
-    rank = models.IntegerField()

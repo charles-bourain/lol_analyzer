@@ -8,9 +8,3 @@ class Rune(models.Model):
 
     def __unicode__(self):
         return unicode(self.name)
-
-
-class PlayerRune(models.Model):
-
-    rune = models.ForeignKey(Rune)
-    rank = models.IntegerField()

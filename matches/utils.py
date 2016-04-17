@@ -6,8 +6,8 @@ from runes.utils import get_static_rune_data
 from masteries.utils import get_static_mastery_data
 from items.utils import request_all_item_info
 from heroes.utils import request_all_champion_info, get_all_champion_details
-from runes.models import Rune, PlayerRune
-from masteries.models import Mastery, PlayerMastery
+from runes.models import Rune
+from masteries.models import Mastery
 from items.models import Item
 from heroes.models import Hero
 
@@ -106,15 +106,24 @@ def get_match_data(match_obj):
             totalHeal = player['stats']['totalHeal'],         
             )
 
+        mastery_rank = {}
         for mastery in player['masteries']:
             mastery_obj = Mastery.objects.get(masteryId = mastery['masteryId'])
-            player_mastery, created = PlayerMastery.objects.get_or_create(rank = mastery['rank'], mastery = mastery_obj)
-            player_obj.masteries.add(player_mastery)
+            #player_mastery, created = PlayerMastery.objects.get_or_create(rank = mastery['rank'], mastery = mastery_obj)
+            player_obj.masteries.add(mastery_obj)
+            mastery_rank[mastery_obj.masteryId] = mastery['rank']
 
+        player_obj.mastery_rank = str(mastery_rank)
+
+        rune_rank = {}
         for rune in player['runes']:
             rune_obj = Rune.objects.get(runeId = rune['runeId'])
-            player_rune, created = PlayerRune.objects.get_or_create(rank = rune['rank'], rune = rune_obj)
-            player_obj.runes.add(player_rune)
+            #player_rune, created = PlayerRune.objects.get_or_create(rank = rune['rank'], rune = rune_obj)
+            rune_rank[rune_obj.runeId] = rune['rank']
+            player_obj.runes.add(rune_obj)
+
+        player_obj.rune_rank = str(rune_rank)
+
 
         for stat in player['stats']:
             if 'item' in stat and player['stats'][stat] != 0:
@@ -168,46 +177,3 @@ def delete_matches():
 
 
 
-
-# def request_champion_details(riot_id):
-#     champion = Hero.objects.get(riot_id = riot_id)
-#     print champion.name, ', GOT FOR DETAILS'
-#     champion_detail_url = 'https://global.api.pvp.net/api/lol/static-data/na/v1.2/champion/%s?champData=image,info,partype,stats,tags&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d' % riot_id
-#     champion_detail_request = requests.get(champion_detail_url).json()
-#     # champion.tag = str(champion_detail_request['tags'])
-#     champion.attackrange = champion_detail_request['stats']['attackrange']
-#     champion.mpperlevel = champion_detail_request['stats']['mpperlevel']
-#     champion.mp = champion_detail_request['stats']['mp']
-#     champion.attackdamage = champion_detail_request['stats']['attackdamage']
-#     champion.hp = champion_detail_request['stats']['hp']
-#     champion.hpperlevel = champion_detail_request['stats']['hpperlevel']
-#     champion.attackdamageperlevel = champion_detail_request['stats']['attackdamageperlevel']
-#     champion.armor = champion_detail_request['stats']['armor']
-#     champion.mpregenperlevel = champion_detail_request['stats']['mpregenperlevel']
-#     champion.hpregen = champion_detail_request['stats']['hpregen']
-#     champion.critperlevel = champion_detail_request['stats']['critperlevel']
-#     champion.spellblockperlevel = champion_detail_request['stats']['spellblockperlevel']
-#     champion.mpregen = champion_detail_request['stats']['mpregen']
-#     champion.attackspeedperlevel = champion_detail_request['stats']['attackspeedperlevel']
-#     champion.spellblock = champion_detail_request['stats']['spellblock']
-#     champion.movespeed = champion_detail_request['stats']['movespeed']
-#     champion.attackspeedoffset = champion_detail_request['stats']['attackspeedoffset']
-#     champion.crit = champion_detail_request['stats']['crit']
-#     champion.hpregenperlevel = champion_detail_request['stats']['hpregenperlevel']
-#     champion.armorperlevel = champion_detail_request['stats']['armorperlevel']
-#     champion.save()
-
-#     for tag in list(champion_detail_request['tags']):
-#         print tag
-#         champion_tag, created = HeroTag.objects.get_or_create(hero = champion, tag = tag)
-#         if created == True:
-#             champion_tag.save()
-
-
-# def get_all_champion_details():
-#     heroes = Hero.objects.all()
-#     for hero in heroes:
-#         try:
-#             Hero.objects.get(riot_id = hero.riot_id)
-#         except:
-#             request_champion_details(hero.riot_id)

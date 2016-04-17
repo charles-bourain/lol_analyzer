@@ -1,7 +1,7 @@
 from django.db import models
 from heroes.models import Hero
-from runes.models import PlayerRune
-from masteries.models import PlayerMastery
+from runes.models import Rune
+from masteries.models import Mastery
 from items.models import Item
 
 
@@ -23,8 +23,10 @@ class Player(models.Model):
 
     match = models.ForeignKey(Match)
     champion = models.ForeignKey(Hero)
-    runes = models.ManyToManyField(PlayerRune)
-    masteries = models.ManyToManyField(PlayerMastery)
+    runes = models.ManyToManyField(Rune)
+    rune_rank = models.CharField(max_length = 1000)
+    masteries = models.ManyToManyField(Mastery)
+    mastery_rank = models.CharField(max_length = 1000)
     item = models.ManyToManyField(Item)
     winner = models.BooleanField(default = False)
     json_response = models.CharField(max_length = 10000)
