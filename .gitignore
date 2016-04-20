@@ -26,7 +26,8 @@
 *.sql
 *.sqlite
 *.sqlite3
-djangodblite
+db.sqlite3
+db
  
 # OS generated files #
 ######################
