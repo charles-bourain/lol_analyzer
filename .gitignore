@@ -27,7 +27,7 @@
 *.sqlite
 *.sqlite3
 db.sqlite3
-db
+db*
  
 # OS generated files #
 ######################
