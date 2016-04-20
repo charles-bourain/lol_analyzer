@@ -10,10 +10,12 @@ from runes.models import Rune
 from masteries.models import Mastery
 from items.models import Item
 from heroes.models import Hero
+from timbad.settings import CURRENT_SEASON
+import time
 
 
 def get_match_list(summoner_id):
-    match_list_url = 'https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/%s?api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d' % summoner_id
+    match_list_url = 'https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/%s?seasons=%s&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d' % (summoner_id, CURRENT_SEASON)
     try:
         match_request = requester(match_list_url,'get')
     except:
@@ -24,13 +26,16 @@ def get_match_list(summoner_id):
 def create_match_obj(match_id):
     match_url = 'https://na.api.pvp.net/api/lol/na/v2.2/match/%s?api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d' % match_id
     match_request = requester(match_url,'get')
-    match, created  = Match.objects.get_or_create(match_id = match_request['matchId'])
+    try:
+        match, created  = Match.objects.get_or_create(match_id = match_request['matchId'])
+    except:
+        print 'MATCH FAILED TO CREATE, SKIPPING'
 
 
 
 
 
-def update_matches_for_current_league_rankings(*args):
+def update_league(*args):
     match_count = 0   #TEMP TO CONTROL MATCH_ROW LIMIT
 
     while match_count <= 5000: #TEMP TO CONTROL MATCH_ROW LIMIT
@@ -73,12 +78,24 @@ def get_match_data(match_obj):
     match_data_url = 'https://na.api.pvp.net/api/lol/na/v2.2/match/%s?api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d' % match_id
 
     match_data = requester(match_data_url, 'get')
-    
+
+
+    try:
+        status_code = match_data['status']['status_code']
+        status_message = match_data['status']['message']
+        print 'REQUEST ERROR: %s -- %s' %(status_code, status_message)
+        return False
+    except:
+        pass
+
     for team in match_data['teams']:
         if team['winner'] == True:
-            winning_team = team['teamId']
+                winning_team = team['teamId']
 
+    wteam = []
+    lteam = []
     for player in match_data['participants']:
+
 
         (player_obj, created) = Player.objects.get_or_create(
             match = match_obj, 
@@ -103,7 +120,8 @@ def get_match_data(match_obj):
             totalTimeCrowdControlDealt = player['stats']['totalTimeCrowdControlDealt'],
             minionsKilled = player['stats']['minionsKilled'],
             goldEarned = player['stats']['goldEarned'],
-            totalHeal = player['stats']['totalHeal'],         
+            totalHeal = player['stats']['totalHeal'],
+            team = player['teamId'],       
             )
 
         mastery_rank = {}
@@ -130,15 +148,38 @@ def get_match_data(match_obj):
                 player_obj.item.add(Item.objects.get(riot_id = player['stats'][stat]))
 
         
-        if player_obj.team and winning_team == 200:
+        if player_obj.team == winning_team:
             player_obj.winner = True
-        elif not player_obj.team and winning_team == 100:
-            player_obj.winner = True
+            wteam.append(player_obj)
         else:
             player_obj.winner = False
+            lteam.append(player_obj)
         player_obj.save()
 
 
+    for team in [wteam, lteam]:
+
+        if team == wteam:
+            ally_team = wteam
+            enemy_team = lteam
+        else:
+            ally_team = lteam
+            enemy_team = wteam
+
+        for player in team:
+            for j in ally_team:
+                if player != j:
+                        player.ally_heroes.add(j.champion)
+                        player.ally_players.add(j)
+                for j in enemy_team:
+                    player.enemy_heroes.add(j.champion)
+                    player.enemy_players.add(j)
+                player.save()
+
+    return True
+
+
+     
 
 
 
@@ -148,10 +189,18 @@ def get_all_match_data():
     for match in matches:
         if len(Player.objects.filter(match = match)) > 0: 
             print 'Match Exists, Skipping "get"'
-        else:
-            get_match_data(match)
-
-
+            continue
+        
+        get_match_success = get_match_data(match)
+        
+        if not get_match_success:
+            print '-- FIRST PASS FAILED, 10 SECOND WAIT THEN SECOND ATTEMPT --'
+            time.sleep(10)
+            second_try_success = get_match_data(match)
+            if second_try_success:
+                print 'Second attempt was successful'
+            else:
+                print 'Second attempt unsuccessful, skipping: ', match
 
 
 
@@ -161,9 +210,6 @@ def get_all_static_data():
     request_all_item_info()
     request_all_champion_info()
     get_all_champion_details()
-
-
-
 
 
 def delete_matches():

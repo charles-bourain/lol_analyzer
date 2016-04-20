@@ -19,7 +19,7 @@ class Match(models.Model):
     def __unicode__(self):
             return "Match ID: "+unicode(self.match_id)
 
-class Player(models.Model):
+class Player(models.Model):  
 
     match = models.ForeignKey(Match)
     champion = models.ForeignKey(Hero)
@@ -32,7 +32,11 @@ class Player(models.Model):
     json_response = models.CharField(max_length = 10000)
     spell1 = models.IntegerField(default = 666)
     spell2 = models.IntegerField(default = 666)
-    team = models.BooleanField(default = False) #JSON Response Conversion- '200'= True, '100'=False
+    team = models.IntegerField()
+    ally_heroes = models.ManyToManyField(Hero, related_name = 'allies')
+    enemy_heroes = models.ManyToManyField(Hero, related_name = 'enemies')
+    ally_players = models.ManyToManyField('self')
+    enemy_players = models.ManyToManyField('self')
 
     totalDamageTaken = models.IntegerField(default = 0)
     physicalDamageTaken = models.IntegerField(default = 0)
@@ -59,3 +63,5 @@ class Player(models.Model):
 
     totalHeal = models.IntegerField(default = 0)
  
+    def __unicode__(self):
+        return unicode(self.match.id) +" "+ unicode(self.champion)

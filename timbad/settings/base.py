@@ -31,6 +31,7 @@ RIOT_API_KEY = os.environ.get('RIOT_API_KEY')
 RIOT_REQUEST_BASE = {
 'NA':"https://na.api.pvp.net/",
 }
+CURRENT_SEASON = 'SEASON2016'
 
 
 # Application definition
@@ -48,6 +49,7 @@ INSTALLED_APPS = [
     'request_manager',
     'runes',
     'masteries',
+    'brain',
 ]
 
 MIDDLEWARE_CLASSES = (
@@ -83,7 +85,7 @@ WSGI_APPLICATION = 'timbad.wsgi.application'
 
 REQUEST_LIMITS = {
 "ten_second": 10,
-"ten_minute": 500,
+"ten_minute": 300,
 }
 
 

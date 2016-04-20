@@ -12,6 +12,7 @@ def requester(url, request_type):
     ten_min_time_del = datetime.timedelta(seconds = 10*60)
 
     def scrub_manager():
+        print 'SCRUBBING....'
         #Delete all Requests that were created after now + 10 minutes
         expiration_time = timezone.now()-ten_min_time_del
         expired_manager_objs = Request.objects.filter(request_time__lte=expiration_time)
@@ -45,7 +46,8 @@ def requester(url, request_type):
 
     if request_type == 'get':
         Request.objects.create()
-        return requests.get(url).json()
+        response = requests.get(url).json()
+        return response
 
 
 
