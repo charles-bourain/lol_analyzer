@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import AllyNode, EnemyNode
+from .models import ItemAllyNode, ItemEnemyNode
 
-admin.site.register(AllyNode)
-admin.site.register(EnemyNode)
+admin.site.register(ItemAllyNode)
+admin.site.register(ItemEnemyNode)

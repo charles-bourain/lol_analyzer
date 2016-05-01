@@ -1,6 +1,8 @@
-from .models import AllyNode, EnemyNode
+from .models import ItemAllyNode, ItemEnemyNode
 from matches.models import Player, Match
-from pybrain.structure import FeedForwardNetwork, FullConnection
+from pybrain.structure import FeedForwardNetwork, FullConnection, LinearLayer, SigmoidLayer, RecurrentNetwork
+from pybrain.supervised.trainers import BackpropTrainer # trainer = BackpropTrainer(network, dataset)
+from pybrain.datasets.supervised import SupervisedDataSet
 
 
 
@@ -8,54 +10,108 @@ def build_network(match_obj):
 
     player_list = Player.objects.filter(match = match_obj)
 
-    node_obj_list = []
+    ally_node_list = []
+    enemy_node_list = []
 
-    for player in player_list:
-        for p_ally in player.ally_players.all():
-            champion = p_ally.champion
-            for i in player.item.all():
-                node_obj_list.append(get_node(player.champion, champion, True, i))
 
-        for p_enemy in player.enemy_players.all():
-            champion = p_enemy.champion
-            for i in p_enemy.item.all():
-                node_obj_list.append(get_node(player.champion, champion, False, i))
+    player = player_list[0]
+    print 'PRIME IS: ', player
+    for p_ally in player.ally_players.all():
+        champion = p_ally.champion
+        for i in player.item.all():
+            node = get_node(player.champion, champion, True, i)
+            ally_node_list.append(node)
+
+    for p_enemy in player.enemy_players.all():
+        champion = p_enemy.champion
+        for i in p_enemy.item.all():
+            node = get_node(player.champion, champion, False, i)
+            enemy_node_list.append(node)
 
     #defining neural network
     network = FeedForwardNetwork()
-    input_layer = LinearLayer(len(node_obj_list))
-    output_layer = LinearLayer(1)
-    input_output_connection = FullConnection(input_layer, output_layer)
+    input_layer = LinearLayer(len(ally_node_list+enemy_node_list), name = 'item_layer')
+    output_layer = LinearLayer(1, name = 'win_layer')
+    linear_connection = FullConnection(input_layer, output_layer, name = 'c1')
 
     network.addInputModule(input_layer)
     network.addOutputModule(output_layer)
-    network.addConnection(input_output_connection)
+
+    network.addConnection(linear_connection)
+
     network.sortModules()
 
-    input_list = []
-    weight_list = []
-    for node in node_obj_list:
-        input_list.append(node.win_rate)
-        weight_list.append(node.weight)
+    network_params = get_network_params(ally_node_list+enemy_node_list)
+    network._setParameters(network_params)
 
-    input_output_connection.params = weight_list
-    print network.active(input_list)
+    input_list = [1]*len(ally_node_list+enemy_node_list)
+#        weight_list.append(node.weight)
 
-
-
+    # input_output_connection.params = weight_list
+    return network.activate(input_list)
+    
 
 
+def build_dataset(node_set_list, prime_win_bool):
 
+    input_set = [1]*len(node_set_list)
+    if prime_win_bool:
+        target_set = [1]
+    else:
+        target_set = [-1]
+
+    print 'creating dataset......'
+    data_set = SupervisedDataSet(len(input_set), len(target_set))
+    data_set.appendLinked(input_set, target_set)
+    return data_set
+
+
+
+
+def build_prime_only_network(player_obj):
+
+    ally_node_list = []
+    enemy_node_list = []
+
+    for p_ally in player_obj.ally_players.all():
+        champion = p_ally.champion
+        for i in p_ally.item.all():
+            node = get_node(player_obj.champion, champion, True, i)
+            ally_node_list.append(node)
+
+    for p_enemy in player_obj.enemy_players.all():
+        champion = p_enemy.champion
+        for i in p_enemy.item.all():
+            node = get_node(player_obj.champion, champion, False, i)
+            enemy_node_list.append(node)
+
+    #defining neural network
+    network = FeedForwardNetwork()
+    input_layer = LinearLayer(len(ally_node_list+enemy_node_list), name = 'champ/item_layer')
+    output_layer = LinearLayer(1, name = 'win_layer') # -1 to 1
+    linear_connection = FullConnection(input_layer, output_layer, name = 'c1')
+
+    network.addInputModule(input_layer)
+    network.addOutputModule(output_layer)
+
+    network.addConnection(linear_connection)
+
+    network.sortModules()
+
+    return network, ally_node_list+enemy_node_list, player_obj.winner  
 
 
 
 #Getting strange false items in this function.  item_obj is appear, but when Player.objects.filter is called, total = 0 in some cases.  Possible sold item?
+#Nodes built are getting more complicated (Going to Add Nodes for Masteries)
 def get_node(prime_hero_obj, eval_hero_obj, ally_bool, item_obj):
 
     if ally_bool:
-        node, created = AllyNode.objects.get_or_create(prime = prime_hero_obj, ally = eval_hero_obj, item = item_obj)
+        node, created = ItemAllyNode.objects.get_or_create(prime = prime_hero_obj, ally = eval_hero_obj, item = item_obj)
     else:
-        node, created = EnemyNode.objects.get_or_create(prime = prime_hero_obj, enemy = eval_hero_obj, item = item_obj)
+        node, created = ItemEnemyNode.objects.get_or_create(prime = prime_hero_obj, enemy = eval_hero_obj, item = item_obj)
+
+    total = 0
     
     if created and ally_bool:
         wins = Player.objects.filter(champion = prime_hero_obj, ally_heroes = eval_hero_obj, item = item_obj, winner = True).count()
@@ -65,17 +121,79 @@ def get_node(prime_hero_obj, eval_hero_obj, ally_bool, item_obj):
         total = Player.objects.filter(champion = prime_hero_obj, enemy_heroes = eval_hero_obj, item = item_obj).count()
 
     if total != 0:
-        node.win_rate = float(wins)/float(total)
         node.save()
 
     return node
 
 
 def test_build_network():
-    AllyNode.objects.all().delete()
-    EnemyNode.objects.all().delete()
-    build_network(Match.objects.get(id = 5000))
+    # ItemAllyNode.objects.all().delete()
+    # ItemEnemyNode.objects.all().delete()
+    #build_network(Match.objects.get(id = 1))
+    player = Player.objects.filter(match = Match.objects.get(id=1))[0]
+    network, node_set_list, prime_win_bool = build_prime_only_network(player)  
+    network_params = get_network_params(node_set_list)
+
+    network._setParameters(network_params)
+
+    data_set = build_dataset(node_set_list, prime_win_bool)
+
+    trainer = BackpropTrainer(network, data_set)
+    trainer.train()
+
+    new_weight_list = network.params
+
+    i=0
+    while i < len(node_set_list):
+        node_set_list[i].weight = network.params[i]
+        node_set_list[i].save()
+        i+=1
+
+
+
+def get_network_params(node_set_list):
+    param_list = []
+    for node in node_set_list:
+        param_list.append(node.weight)
+    return param_list
+
+
+def golds_gym():
+    for match in Match.objects.all():
+        print "Dataset for Match ID: ",match.match_id
+        for player in Player.objects.filter(match = match):
+            try:
+
+                network, node_set_list, prime_win_bool = build_prime_only_network(player)
+                network_params = get_network_params(node_set_list)
+                network._setParameters(network_params)
+
+                data_set = build_dataset(node_set_list, prime_win_bool)
+                trainer = BackpropTrainer(network, data_set)
+                trainer.train()
+                new_weight_list = network.params
+                i=0
+                while i < len(node_set_list):
+                    node_set_list[i].weight = network.params[i]
+                    node_set_list[i].save()
+                    i+=1 
+            except:
+                print 'SOMETHING WENT WRONG WITH MATCH: ', match.match_id           
+
+
+def test_trained_network(id):
+    match = Match.objects.get(id = id)
+    player_set = Player.objects.filter(match = match)
+    for player in player_set:
+        print player
+        print player.winner
+
+    output =  build_network(match)[0]
+    percent = (output+1)/2*100
+
+    print 'Output = ',percent,'%'
 
 
 
 
+             
