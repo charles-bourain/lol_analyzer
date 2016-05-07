@@ -4,6 +4,23 @@ from pybrain.structure import FeedForwardNetwork, FullConnection, LinearLayer, S
 from pybrain.supervised.trainers import BackpropTrainer # trainer = BackpropTrainer(network, dataset)
 from pybrain.datasets.supervised import SupervisedDataSet
 
+from brain.manager import PrimeLinearTrainerManager
+
+
+
+
+def test():
+    player = Player.objects.filter(match = 1)[1]
+    z = PrimeLinearTrainerManager(player)
+    z.train_linear_network()
+
+
+def golds_gym():
+    for match in Match.objects.all():
+         for player in Player.objects.filter(match = match):
+            m = PrimeLinearTrainerManager(player)
+            m.train_linear_network()
+
 
 
 def build_network(match_obj):
@@ -157,28 +174,6 @@ def get_network_params(node_set_list):
         param_list.append(node.weight)
     return param_list
 
-
-def golds_gym():
-    for match in Match.objects.all():
-        print "Dataset for Match ID: ",match.match_id
-        for player in Player.objects.filter(match = match):
-            try:
-
-                network, node_set_list, prime_win_bool = build_prime_only_network(player)
-                network_params = get_network_params(node_set_list)
-                network._setParameters(network_params)
-
-                data_set = build_dataset(node_set_list, prime_win_bool)
-                trainer = BackpropTrainer(network, data_set)
-                trainer.train()
-                new_weight_list = network.params
-                i=0
-                while i < len(node_set_list):
-                    node_set_list[i].weight = network.params[i]
-                    node_set_list[i].save()
-                    i+=1 
-            except:
-                print 'SOMETHING WENT WRONG WITH MATCH: ', match.match_id           
 
 
 def test_trained_network(id):
