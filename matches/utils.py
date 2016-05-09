@@ -36,8 +36,7 @@ def create_match_obj(match_id):
 
 
 def update_league(*args):
-    match_count = 0   #TEMP TO CONTROL MATCH_ROW LIMIT
-
+    match_count = 0
     while match_count <= 5000: #TEMP TO CONTROL MATCH_ROW LIMIT
         if args == () or args == "master":
             league_player_list_url = "https://na.api.pvp.net/api/lol/na/v2.5/league/master?type=RANKED_SOLO_5x5&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d"
@@ -210,6 +209,7 @@ def get_all_static_data():
     request_all_item_info()
     request_all_champion_info()
     get_all_champion_details()
+
 
 
 def delete_matches():

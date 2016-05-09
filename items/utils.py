@@ -27,19 +27,18 @@ def request_all_item_info():
     item_data_list = []
    
     for item in item_data:
+
         item_data_list.append(item_data[item])
+        print item_data[item]['id']
+
+        if Item.objects.get(riot_id = item_data[item]['id']):
+            continue
 
         item, created = Item.objects.get_or_create(
         
-            name = item_data[item]['name'], 
             riot_id = item_data[item]['id'],
+            name = item_data[item]['name'], 
             image = item_data[item]['image'],
-
-            # for stat in item_data[item]['stat']:
-            #     print stat
-            #     assign_fields(stat)
-
-
             FlatArmorMod = _get_item_stats_from_json(item, 'FlatArmorMod'),
             FlatAttackSpeedMod =  _get_item_stats_from_json(item,'FlatAttackSpeedMod'),  
             FlatBlockMod =  _get_item_stats_from_json(item,'FlatBlockMod'),    
@@ -106,6 +105,7 @@ def request_all_item_info():
             rPercentTimeDeadMod = _get_item_stats_from_json(item, 'rPercentTimeDeadMod'),    
             rPercentTimeDeadModPerLevel = _get_item_stats_from_json(item, 'rPercentTimeDeadModPerLevel'),    
         )
+
             
         
         # for tag in list(raw_tag):

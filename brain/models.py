@@ -7,13 +7,15 @@ from masteries.models import Mastery
 
 class NeuralNode(models.Model):
     prime = models.ForeignKey(Hero)
-    weight = models.FloatField(default = 0.0)
+    weight = models.FloatField(default = 0.5)
 
 
 
 #------- Item Nodes --------
 class ItemNode(NeuralNode):
     item = models.ForeignKey(Item)
+    total = models.IntegerField(default = 0)
+    wins = models.IntegerField(default = 0)
 
 
 #Win Neural Node to store PyBrain inputs.  Win% is Win rate of prime hero with ally on team

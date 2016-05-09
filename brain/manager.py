@@ -59,67 +59,67 @@ class NetworkTrainerManager(NetworkManager):
 
 
 
-class PrimeTrainingNetworkManager(NetworkTrainerManager):
+# class PrimeTrainingNetworkManager(NetworkTrainerManager):
 
-    def __init__(self, player_object):
+#     def __init__(self, player_object):
 
-        if not isinstance(player_object, Player):
-            raise ValueError('Object: ', player_object, ' is not a Player Object')
+#         if not isinstance(player_object, Player):
+#             raise ValueError('Object: ', player_object, ' is not a Player Object')
 
-        super(PrimeTrainingNetworkManager, self).__init__()            
+#         super(PrimeTrainingNetworkManager, self).__init__()            
 
-        self.prime = player_object
+#         self.prime = player_object
 
-        ally_node_list = []
-        enemy_node_list = []
+#         ally_node_list = []
+#         enemy_node_list = []
 
-        for p_ally in self.prime.ally_players.all():
-            champion = p_ally.champion
-            for i in self.prime.item.all():
-                node = self.get_node(self.prime.champion, champion, True, i)
-                ally_node_list.append(node)
+#         for p_ally in self.prime.ally_players.all():
+#             champion = p_ally.champion
+#             for i in self.prime.item.all():
+#                 node = self.get_node(self.prime.champion, champion, True, i)
+#                 ally_node_list.append(node)
 
-        for p_enemy in self.prime.enemy_players.all():
-            champion = p_enemy.champion
-            for i in p_enemy.item.all():
-                node = self.get_node(self.prime.champion, champion, False, i)
-                enemy_node_list.append(node)        
+#         for p_enemy in self.prime.enemy_players.all():
+#             champion = p_enemy.champion
+#             for i in p_enemy.item.all():
+#                 node = self.get_node(self.prime.champion, champion, False, i)
+#                 enemy_node_list.append(node)        
 
-        self.input_layer = LinearLayer(len(ally_node_list+enemy_node_list), name = 'item_layer')
-        self.input = [1]*len(ally_node_list+enemy_node_list)
-        self.output_layer = LinearLayer(1, name = 'win_layer')
-        self.linear_connection = FullConnection(self.input_layer, self.output_layer, name = 'c1')
+#         self.input_layer = LinearLayer(len(ally_node_list+enemy_node_list), name = 'item_layer')
+#         self.input = [1]*len(ally_node_list+enemy_node_list)
+#         self.output_layer = LinearLayer(1, name = 'win_layer')
+#         self.linear_connection = FullConnection(self.input_layer, self.output_layer, name = 'c1')
 
-        if self.prime.winner:
-            self.target = [1]
-        else:
-            self.target = [0]
+#         if self.prime.winner:
+#             self.target = [1]
+#         else:
+#             self.target = [0]
         
-        self.node_set_list = ally_node_list+enemy_node_list
+#         self.node_set_list = ally_node_list+enemy_node_list
 
-        self.build_network()
+#         self.build_network()
 
 
-    def get_node(self, prime_hero_obj, eval_hero_obj, ally_bool, item_obj):
+#     def get_node(self, prime_hero_obj, eval_hero_obj, ally_bool, item_obj):
 
-        if ally_bool:
-            node, created = ItemAllyNode.objects.get_or_create(prime = prime_hero_obj, ally = eval_hero_obj, item = item_obj)
-        else:
-            node, created = ItemEnemyNode.objects.get_or_create(prime = prime_hero_obj, enemy = eval_hero_obj, item = item_obj)
+#         if ally_bool:
+#             node, created = ItemAllyNode.objects.get_or_create(prime = prime_hero_obj, ally = eval_hero_obj, item = item_obj)
+#         else:
+#             node, created = ItemEnemyNode.objects.get_or_create(prime = prime_hero_obj, enemy = eval_hero_obj, item = item_obj)
 
-        total = 0
+#         total = 0
         
-        if created and ally_bool:
-            wins = Player.objects.filter(champion = prime_hero_obj, ally_heroes = eval_hero_obj, item = item_obj, winner = True).count()
-            total = Player.objects.filter(champion = prime_hero_obj, ally_heroes = eval_hero_obj, item = item_obj).count()
-        elif created and not ally_bool:
-            wins = Player.objects.filter(champion = prime_hero_obj, enemy_heroes = eval_hero_obj, item = item_obj, winner = True).count()
-            total = Player.objects.filter(champion = prime_hero_obj, enemy_heroes = eval_hero_obj, item = item_obj).count()
+#         if created and ally_bool:
+#             wins = Player.objects.filter(champion = prime_hero_obj, ally_heroes = eval_hero_obj, item = item_obj, winner = True).count()
+#             total = Player.objects.filter(champion = prime_hero_obj, ally_heroes = eval_hero_obj, item = item_obj).count()
+#         elif created and not ally_bool:
+#             wins = Player.objects.filter(champion = prime_hero_obj, enemy_heroes = eval_hero_obj, item = item_obj, winner = True).count()
+#             total = Player.objects.filter(champion = prime_hero_obj, enemy_heroes = eval_hero_obj, item = item_obj).count()
 
-        if total != 0:
-            node.save()
+#         if total != 0:
+#             node.save()
 
-        return node
+#         return node
 
 
 class PrimeLinearTrainerManager(NetworkTrainerManager):
@@ -131,61 +131,35 @@ class PrimeLinearTrainerManager(NetworkTrainerManager):
 
         super(PrimeLinearTrainerManager, self).__init__()            
 
-        self.prime = player_object
+        self.prime = player_object 
 
-        ally_node_list = []
-        enemy_node_list = []
-
-        for p_ally in self.prime.ally_players.all():
-            champion = p_ally.champion
-            for i in self.prime.item.all():
-                node = self.get_node(self.prime.champion, champion, True, i)
-                ally_node_list.append(node)
-
-        for p_enemy in self.prime.enemy_players.all():
-            champion = p_enemy.champion
-            for i in p_enemy.item.all():
-                node = self.get_node(self.prime.champion, champion, False, i)
-                enemy_node_list.append(node)        
+        self.training_node_set_list = self.build_training_node_list() #Training Node List does not include any node that does not need additional training.       
 
         self.input_layer = LinearLayer(1, name = 'item_layer')
         self.input = [1]
         self.output_layer = LinearLayer(1, name = 'win_layer')
         self.linear_connection = FullConnection(self.input_layer, self.output_layer, name = 'c1')
         
-        self.node_set_list = ally_node_list+enemy_node_list
+        
 
 
 
     def train_linear_network(self):
 
-        for node in self.node_set_list:
+        for node in self.training_node_set_list:
 
-            self.reset_weight_for_training(node)
+            # self.reset_weight_for_training(node)
             network = self.build_training_network(node)
             data_set = SupervisedDataSet(1, 1)
-            
 
-            try:
-
-                ally = node.ally
-                loss = Player.objects.filter(champion = node.prime, ally_heroes = ally, item = node.item, winner = False).count()
-                wins = Player.objects.filter(champion = node.prime, ally_heroes = ally, item = node.item, winner = True).count()
-
-            except:
-                enemy = node.enemy
-                loss = Player.objects.filter(champion = node.prime, ally_heroes = ally, item = node.item, winner = False).count()
-                wins = Player.objects.filter(champion = node.prime, ally_heroes = ally, item = node.item, winner = True).count()
-
-            if loss+wins == 0:
+            if node.total < 1: #No Training for nodes with less then 1 datapoints
                 continue
-                print 'PASSING..'
-
-
-            print 'WINS = ', wins
-            print 'LOSS = ', loss
+            
+            print 'TOTAL = ', node.total
+            print 'WINS = ', node.wins
+            print 'LOSS = ', node.total - node.wins
             print 'NETWORK PARAMS BEFORE TRAINING = ', network.params
-            target_set = [0]*loss+[1]*wins
+            target_set = [0]*(node.total-node.wins)+[1]*node.wins
             print target_set
 
             for i in target_set:
@@ -204,7 +178,7 @@ class PrimeLinearTrainerManager(NetworkTrainerManager):
         else:
             node, created = ItemEnemyNode.objects.get_or_create(prime = prime_hero_obj, enemy = eval_hero_obj, item = item_obj)
 
-        return node
+        return node, created
 
     def build_training_network(self, node):
 
@@ -219,9 +193,60 @@ class PrimeLinearTrainerManager(NetworkTrainerManager):
 
         return network
 
-    def reset_weight_for_training(self,node):
-        node.weight = 0.5
-        node.save()
+
+    def build_training_node_list(self):
+
+        ally_node_list = []
+        enemy_node_list = []
+
+        for p_ally in self.prime.ally_players.all():
+            champion = p_ally.champion
+            for i in self.prime.item.all():
+                node, created = self.get_node(self.prime.champion, champion, True, i)
+                
+                current_total = Player.objects.filter(champion = node.prime, ally_heroes = champion, item = i).count()
+                if created:
+                    ally_node_list.append(node)
+                    node.wins = Player.objects.filter(champion = node.prime, ally_heroes = champion, item = i, winner = True).count()
+                    node.total = current_total
+                    node.save()
+                elif node.total < current_total:
+                    ally_node_list.append(node)
+                    node.total = current_total
+                    node.wins = Player.objects.filter(champion = node.prime, ally_heroes = champion, item = i, winner = True).count()
+                    node.weight = 0.5 #TEMP -  Set up right now to re-run all matches, so needs to start from scratch.  Need an weight update function.
+                    node.save()
+
+
+
+        for p_enemy in self.prime.enemy_players.all():
+            champion = p_enemy.champion
+            for i in p_enemy.item.all():
+                node, created = self.get_node(self.prime.champion, champion, False, i)
+                
+                current_total = Player.objects.filter(champion = node.prime, enemy_heroes = champion, item = i).count()
+                if created:
+                    enemy_node_list.append(node)
+                    node.wins = Player.objects.filter(champion = node.prime, enemy_heroes = champion, item = i, winner = True).count()
+                    node.total = current_total
+                    node.save()
+                elif node.total < current_total:
+                    enemy_node_list.append(node)
+                    node.total = current_total
+                    node.wins = Player.objects.filter(champion = node.prime, enemy_heroes = champion, item = i, winner = True).count()
+                    node.weight = 0.5 #TEMP -  Set up right now to re-run all matches, so needs to start from scratch.  Need an weight update function.
+                    node.save()
+
+
+                
+        return ally_node_list+enemy_node_list                       
+
+
+    # def reset_weight_for_training(self,node):
+    #     node.weight = 0.5
+    #     node.save()
+
+
 
 
 
