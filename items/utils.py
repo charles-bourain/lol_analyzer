@@ -31,7 +31,7 @@ def request_all_item_info():
         item_data_list.append(item_data[item])
 
         try:
-            Item.objects.get(riot_id = item_data[item]['id']):
+            Item.objects.get(riot_id = item_data[item]['id'])
             continue
         except:
             pass
