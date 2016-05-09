@@ -36,39 +36,36 @@ def create_match_obj(match_id):
 
 
 def update_league(*args):
-    match_count = 0
-    while match_count <= 5000: #TEMP TO CONTROL MATCH_ROW LIMIT
-        if args == () or args == "master":
-            league_player_list_url = "https://na.api.pvp.net/api/lol/na/v2.5/league/master?type=RANKED_SOLO_5x5&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d"
-        elif args == "challenger":
-            league_player_list_url = "https://na.api.pvp.net/api/lol/na/v2.5/league/challenger?type=RANKED_SOLO_5x5&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d"
-        else:
-            return "League does not Exist for Search"
+    if args == () or args == "master":
+        league_player_list_url = "https://na.api.pvp.net/api/lol/na/v2.5/league/master?type=RANKED_SOLO_5x5&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d"
+    elif args == "challenger":
+        league_player_list_url = "https://na.api.pvp.net/api/lol/na/v2.5/league/challenger?type=RANKED_SOLO_5x5&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d"
+    else:
+        return "League does not Exist for Search"
 
+    try:
+
+        league_player_list_request = requests.get(league_player_list_url).json()
+    except:
+            "League Player List Request Failed"
+
+    for entry in league_player_list_request['entries']:
         try:
+            print "-"*10+"GETTING MATCH IDS FOR PLAYER: %r" %(entry['playerOrTeamName'])+"-"*10
 
-            league_player_list_request = requests.get(league_player_list_url).json()
+            player_id = entry['playerOrTeamId']
+            match_list = get_match_list(player_id)
         except:
-                "League Player List Request Failed"
-
-        for entry in league_player_list_request['entries']:
-            try:
-                print "-"*10+"GETTING MATCH IDS FOR PLAYER: %r" %(entry['playerOrTeamName'])+"-"*10
-
-                player_id = entry['playerOrTeamId']
-                match_list = get_match_list(player_id)
-            except:
-                print "Match Request Failed"
-                continue
+            print "Match Request Failed"
+            continue
 
 
-            for i in match_list:
-                match_count += 1   #TEMP TO CONTROL MATCH_ROW LIMIT
-                match, created  = Match.objects.get_or_create(match_id = i['matchId'])
-                if not created:
-                    pass
-                else:
-                    match.save()
+        for i in match_list:
+            match, created  = Match.objects.get_or_create(match_id = i['matchId'])
+            if not created:
+                pass
+            else:
+                match.save()
 
 def get_match_data(match_obj):
 
@@ -144,7 +141,10 @@ def get_match_data(match_obj):
 
         for stat in player['stats']:
             if 'item' in stat and player['stats'][stat] != 0:
-                player_obj.item.add(Item.objects.get(riot_id = player['stats'][stat]))
+                try:
+                    player_obj.item.add(Item.objects.get(riot_id = player['stats'][stat]))
+                except:
+                    print 'Riot Item ID Failed to add: ',player['stats'][stat]
 
         
         if player_obj.team == winning_team:
