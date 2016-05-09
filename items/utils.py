@@ -33,7 +33,7 @@ def request_all_item_info():
 
         if Item.objects.get(riot_id = item_data[item]['id']):
             continue
-
+        print item_data[item]['id']
         item, created = Item.objects.get_or_create(
         
             riot_id = item_data[item]['id'],
