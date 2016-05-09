@@ -29,10 +29,12 @@ def request_all_item_info():
     for item in item_data:
 
         item_data_list.append(item_data[item])
-        print item_data[item]['id']
 
-        if Item.objects.get(riot_id = item_data[item]['id']):
+        try:
+            Item.objects.get(riot_id = item_data[item]['id']):
             continue
+        except:
+            pass
         print item_data[item]['id']
         item, created = Item.objects.get_or_create(
         
