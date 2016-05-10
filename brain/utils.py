@@ -6,15 +6,14 @@ from pybrain.datasets.supervised import SupervisedDataSet
 from matches.utils import get_match_data
 import time
 
-from brain.manager import PrimeLinearTrainerManager
+from brain.manager import PrimeLinearTrainerManager, MLPTrainerManager
 
 
 
 
 def test():
     player = Player.objects.filter(match = 1)[1]
-    z = PrimeLinearTrainerManager(player)
-    z.train_linear_network()
+    z = MLPTrainerManager(player)
 
 
 def golds_gym():

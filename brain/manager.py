@@ -121,6 +121,129 @@ class NetworkTrainerManager(NetworkManager):
 
 #         return node
 
+class MLPTrainerManager(NetworkTrainerManager):
+
+    def __init__(self, player_object):
+
+        if not isinstance(player_object, Player):
+            raise ValueError('Object: ', player_object, ' is not a Player Object')
+
+        super(MLPTrainerManager, self).__init__()            
+
+        self.prime = player_object
+        print self.prime
+
+        self.node_set_list = self.build_node_list()
+        print self.node_set_list  
+
+        self.input_layer = LinearLayer(len(self.node_set_list), name = 'input_layer')
+        self.hidden_layer = SigmoidLayer(9, name = 'hidden_layer')
+        self.output_layer = SigmoidLayer(1, name = 'win_layer')
+        self.input_hidden_connection = FullConnection(self.input_layer, self.hidden_layer, name = 'input_hidden_connection')
+        self.hidden_output_connection = FullConnection(self.hidden_layer, self.output_layer, name = 'hidden_output_connection')
+
+        self.build_network()
+        self.train_network()
+        self.run_network()
+
+
+    def build_network(self):
+        self.network.addInputModule(self.input_layer)
+        self.network.addModule(self.hidden_layer)    
+        self.network.addOutputModule(self.output_layer)               
+        self.network.addConnection(self.input_hidden_connection)
+        self.network.addConnection(self.hidden_output_connection)
+        self.network.sortModules()
+        print self.network
+
+    def get_node(self, prime_hero_obj, eval_hero_obj, ally_bool, item_obj):
+
+        if ally_bool:
+            node, created = ItemAllyNode.objects.get_or_create(prime = prime_hero_obj, ally = eval_hero_obj, item = item_obj)
+        else:
+            node, created = ItemEnemyNode.objects.get_or_create(prime = prime_hero_obj, enemy = eval_hero_obj, item = item_obj)
+
+        return node, created
+
+    def build_node_list(self):
+
+        ally_node_list = []
+        enemy_node_list = []
+
+        for p_ally in self.prime.ally_players.all():
+            champion = p_ally.champion
+            for i in self.prime.item.all():
+                node, created = self.get_node(self.prime.champion, champion, True, i)
+                
+                current_total = Player.objects.filter(champion = node.prime, ally_heroes = champion, item = i).count()
+                if created:
+                    ally_node_list.append(node)
+                    node.wins = Player.objects.filter(champion = node.prime, ally_heroes = champion, item = i, winner = True).count()
+                    node.total = current_total
+                    node.save()
+                else:
+                    ally_node_list.append(node)
+                    node.total = current_total
+                    node.wins = Player.objects.filter(champion = node.prime, ally_heroes = champion, item = i, winner = True).count()
+                    # node.weight = 0.5 #TEMP -  Set up right now to re-run all matches, so needs to start from scratch.  Need an weight update function.
+                    node.save()
+
+        for p_enemy in self.prime.enemy_players.all():
+            champion = p_enemy.champion
+            for i in p_enemy.item.all():
+                node, created = self.get_node(self.prime.champion, champion, False, i)
+                
+                current_total = Player.objects.filter(champion = node.prime, enemy_heroes = champion, item = i).count()
+                if created:
+                    enemy_node_list.append(node)
+                    node.wins = Player.objects.filter(champion = node.prime, enemy_heroes = champion, item = i, winner = True).count()
+                    node.total = current_total
+                    node.save()
+                else:
+                    enemy_node_list.append(node)
+                    node.total = current_total
+                    node.wins = Player.objects.filter(champion = node.prime, enemy_heroes = champion, item = i, winner = True).count()
+                    # node.weight = 0.5 #TEMP -  Set up right now to re-run all matches, so needs to start from scratch.  Need an weight update function.
+                    node.save()
+
+
+                
+        return ally_node_list+enemy_node_list
+
+    def train_network(self):
+
+        for i in xrange(0, len(self.node_set_list)):
+            node = self.node_set_list[i]
+            try:
+                node.ally
+                print 'ALLY = ',node.ally
+            except:
+                print 'ENEMY = ',node.enemy
+            input_set = [0]*len(self.node_set_list)
+            input_set[i] = 1
+            print 'INPUT SET = ', input_set
+
+            j = 0
+            k = 0
+            training_set = SupervisedDataSet(len(self.node_set_list), 1)
+
+            while j <= node.wins:
+                training_set.appendLinked(input_set, [1])
+                j+=1
+
+            while k <= (node.total - node.wins):
+                training_set.appendLinked(input_set, [0])
+                k+=1
+
+    def run_network(self):
+        input_set = [1]*len(self.node_set_list)
+        print self.network.activate(input_set)
+
+
+
+
+
+
 
 class PrimeLinearTrainerManager(NetworkTrainerManager):
 
@@ -192,6 +315,8 @@ class PrimeLinearTrainerManager(NetworkTrainerManager):
         network._setParameters([node.weight])
 
         return network
+
+
 
 
     def build_training_node_list(self):
