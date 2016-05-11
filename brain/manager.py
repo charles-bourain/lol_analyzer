@@ -221,7 +221,8 @@ class MLPTrainerManager(NetworkTrainerManager):
                 print 'ENEMY = ',node.enemy
             input_set = [0]*len(self.node_set_list)
             input_set[i] = 1
-            print 'INPUT SET = ', input_set
+            print "Wins: ", node.wins
+            print 'totals: ', node.total
 
             j = 0
             k = 0
@@ -230,10 +231,12 @@ class MLPTrainerManager(NetworkTrainerManager):
             while j <= node.wins:
                 training_set.appendLinked(input_set, [1])
                 j+=1
+            print 'win set length: ', j
 
             while k <= (node.total - node.wins):
                 training_set.appendLinked(input_set, [0])
                 k+=1
+            print 'loss set length: ', k
 
     def run_network(self):
         input_set = [1]*len(self.node_set_list)
