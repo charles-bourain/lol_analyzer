@@ -203,7 +203,7 @@ def get_all_match_data():
             if second_try_success:
                 print 'Second attempt was successful'
             else:
-                print 'Second attempt unsuccessful, skipping: ', match_id
+                print 'Second attempt unsuccessful, skipping: ', match
 
 
 
