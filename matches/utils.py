@@ -178,7 +178,7 @@ def get_match_data(match_obj):
 
         return True
     except:
-        print 'Error Occured in Match Data for MATCH: ', match
+        print 'Error Occured in Match Data for MATCH: ',match_id 
         return False
 
 
