@@ -86,106 +86,106 @@ def get_match_data(match_obj, current_version):
     except:
         pass
 
-    # try:
-    if not str(match_data['matchVersion']).startswith(str(current_version)):
-        print 'Current Version = %s :: Match Version = %s'% (current_version, match_data['matchVersion'] )
-        print 'Not Current Version, Skipping'
-        return False, False
-    for team in match_data['teams']:
-        if team['winner'] == True:
-                winning_team = team['teamId']
+    try:
+        if not str(match_data['matchVersion']).startswith(str(current_version)):
+            print 'Current Version = %s :: Match Version = %s'% (current_version, match_data['matchVersion'] )
+            print 'Not Current Version, Skipping'
+            match_obj.delete()
+            return False, False
+        for team in match_data['teams']:
+            if team['winner'] == True:
+                    winning_team = team['teamId']
 
-    wteam = []
-    lteam = []
-    for player in match_data['participants']:
-
-
-        (player_obj, created) = Player.objects.get_or_create(
-            match = match_obj, 
-            json_response = player,
-            champion = Hero.objects.get(riot_id = player['championId']),
-            spell1 = player['spell1Id'],
-            spell2 = player['spell2Id'],
-            totalDamageTaken = player['stats']['totalDamageTaken'],
-            physicalDamageTaken = player['stats']['physicalDamageTaken'],
-            magicDamageTaken = player['stats']['magicDamageTaken'],
-            sightWardsBoughtInGame = player['stats']['sightWardsBoughtInGame'],
-            visionWardsBoughtInGame = player['stats']['visionWardsBoughtInGame'],
-            wardsKilled = player['stats']['wardsKilled'],
-            wardsPlaced = player['stats']['wardsPlaced'],
-            deaths = player['stats']['deaths'],
-            assists = player['stats']['assists'],
-            kills = player['stats']['kills'],
-            firstBloodAssist = player['stats']['firstBloodAssist'],
-            magicDamageDealtToChampions = player['stats']['magicDamageDealtToChampions'],
-            physicalDamageDealtToChampions = player['stats']['physicalDamageDealtToChampions'],
-            totalDamageDealtToChampions = player['stats']['totalDamageDealtToChampions'],
-            totalTimeCrowdControlDealt = player['stats']['totalTimeCrowdControlDealt'],
-            minionsKilled = player['stats']['minionsKilled'],
-            goldEarned = player['stats']['goldEarned'],
-            totalHeal = player['stats']['totalHeal'],
-            team = player['teamId'],       
-            )
-
-        mastery_rank = {}
-        for mastery in player['masteries']:
-            mastery_obj = Mastery.objects.get(masteryId = mastery['masteryId'])
-            #player_mastery, created = PlayerMastery.objects.get_or_create(rank = mastery['rank'], mastery = mastery_obj)
-            player_obj.masteries.add(mastery_obj)
-            mastery_rank[mastery_obj.masteryId] = mastery['rank']
-
-        player_obj.mastery_rank = str(mastery_rank)
-
-        rune_rank = {}
-        for rune in player['runes']:
-            rune_obj = Rune.objects.get(runeId = rune['runeId'])
-            #player_rune, created = PlayerRune.objects.get_or_create(rank = rune['rank'], rune = rune_obj)
-            rune_rank[rune_obj.runeId] = rune['rank']
-            player_obj.runes.add(rune_obj)
-
-        player_obj.rune_rank = str(rune_rank)
+        wteam = []
+        lteam = []
+        for player in match_data['participants']:
 
 
-        for stat in player['stats']:
-            if 'item' in stat and player['stats'][stat] != 0:
-                try:
-                    player_obj.item.add(Item.objects.get(riot_id = player['stats'][stat]))
-                except:
-                    print 'Riot Item ID Failed to add: ',player['stats'][stat]
+            (player_obj, created) = Player.objects.get_or_create(
+                match = match_obj, 
+                json_response = player,
+                champion = Hero.objects.get(riot_id = player['championId']),
+                spell1 = player['spell1Id'],
+                spell2 = player['spell2Id'],
+                totalDamageTaken = player['stats']['totalDamageTaken'],
+                physicalDamageTaken = player['stats']['physicalDamageTaken'],
+                magicDamageTaken = player['stats']['magicDamageTaken'],
+                sightWardsBoughtInGame = player['stats']['sightWardsBoughtInGame'],
+                visionWardsBoughtInGame = player['stats']['visionWardsBoughtInGame'],
+                wardsKilled = player['stats']['wardsKilled'],
+                wardsPlaced = player['stats']['wardsPlaced'],
+                deaths = player['stats']['deaths'],
+                assists = player['stats']['assists'],
+                kills = player['stats']['kills'],
+                firstBloodAssist = player['stats']['firstBloodAssist'],
+                magicDamageDealtToChampions = player['stats']['magicDamageDealtToChampions'],
+                physicalDamageDealtToChampions = player['stats']['physicalDamageDealtToChampions'],
+                totalDamageDealtToChampions = player['stats']['totalDamageDealtToChampions'],
+                totalTimeCrowdControlDealt = player['stats']['totalTimeCrowdControlDealt'],
+                minionsKilled = player['stats']['minionsKilled'],
+                goldEarned = player['stats']['goldEarned'],
+                totalHeal = player['stats']['totalHeal'],
+                team = player['teamId'],       
+                )
 
-        
-        if player_obj.team == winning_team:
-            player_obj.winner = True
-            wteam.append(player_obj)
-        else:
-            player_obj.winner = False
-            lteam.append(player_obj)
-        player_obj.save()
+            mastery_rank = {}
+            for mastery in player['masteries']:
+                mastery_obj = Mastery.objects.get(masteryId = mastery['masteryId'])
+                #player_mastery, created = PlayerMastery.objects.get_or_create(rank = mastery['rank'], mastery = mastery_obj)
+                player_obj.masteries.add(mastery_obj)
+                mastery_rank[mastery_obj.masteryId] = mastery['rank']
+
+            player_obj.mastery_rank = str(mastery_rank)
+
+            rune_rank = {}
+            for rune in player['runes']:
+                rune_obj = Rune.objects.get(runeId = rune['runeId'])
+                #player_rune, created = PlayerRune.objects.get_or_create(rank = rune['rank'], rune = rune_obj)
+                rune_rank[rune_obj.runeId] = rune['rank']
+                player_obj.runes.add(rune_obj)
+
+            player_obj.rune_rank = str(rune_rank)
 
 
-    for team in [wteam, lteam]:
+            for stat in player['stats']:
+                if 'item' in stat and player['stats'][stat] != 0:
+                    try:
+                        player_obj.item.add(Item.objects.get(riot_id = player['stats'][stat]))
+                    except:
+                        print 'Riot Item ID Failed to add: ',player['stats'][stat]
 
-        if team == wteam:
-            ally_team = wteam
-            enemy_team = lteam
-        else:
-            ally_team = lteam
-            enemy_team = wteam
+            
+            if player_obj.team == winning_team:
+                player_obj.winner = True
+                wteam.append(player_obj)
+            else:
+                player_obj.winner = False
+                lteam.append(player_obj)
+            player_obj.save()
 
-        for player in team:
-            for j in ally_team:
-                if player != j:
-                        player.ally_heroes.add(j.champion)
-                        player.ally_players.add(j)
-                for j in enemy_team:
-                    player.enemy_heroes.add(j.champion)
-                    player.enemy_players.add(j)
-                player.save()
 
-    return True, True
-    # except:
-    #     print 'Error Occured in Match Data for MATCH: ',match_id 
-    #     return False, True
+        for team in [wteam, lteam]:
+
+            if team == wteam:
+                ally_team = wteam
+                enemy_team = lteam
+            else:
+                ally_team = lteam
+                enemy_team = wteam
+
+            for player in team:
+                for j in ally_team:
+                    if player != j:
+                            player.ally_heroes.add(j.champion)
+                            player.ally_players.add(j)
+                    for j in enemy_team:
+                        player.enemy_heroes.add(j.champion)
+                        player.enemy_players.add(j)
+                    player.save()
+        return True, True
+    except:
+        print 'Error Occured in Match Data for MATCH: ',match_id 
+        return False, True
 
 
      
