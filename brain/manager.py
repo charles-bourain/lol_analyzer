@@ -1,6 +1,6 @@
 from .models import *
 from matches.models import Player, Match
-from pybrain.structure import FeedForwardNetwork, FullConnection, LinearLayer, SigmoidLayer, RecurrentNetwork
+from pybrain.structure import FeedForwardNetwork, FullConnection, LinearLayer, SigmoidLayer, RecurrentNetwork, BiasUnit
 from pybrain.supervised.trainers import BackpropTrainer # trainer = BackpropTrainer(network, dataset)
 from pybrain.datasets.supervised import SupervisedDataSet
 
@@ -121,6 +121,8 @@ class NetworkTrainerManager(NetworkManager):
 
 #         return node
 
+OUTPUT_SET_INT = 1
+
 class MLPTrainerManager(NetworkTrainerManager):
 
     def __init__(self, player_object):
@@ -131,16 +133,16 @@ class MLPTrainerManager(NetworkTrainerManager):
         super(MLPTrainerManager, self).__init__()            
 
         self.prime = player_object
-        print self.prime
 
         self.node_set_list = self.build_node_list()
-        print self.node_set_list  
 
         self.input_layer = LinearLayer(len(self.node_set_list), name = 'input_layer')
-        self.hidden_layer = SigmoidLayer(9, name = 'hidden_layer')
-        self.output_layer = SigmoidLayer(1, name = 'win_layer')
+        self.hidden_layer = SigmoidLayer(len(self.node_set_list), name = 'hidden_layer')
+        self.output_layer = SigmoidLayer(OUTPUT_SET_INT, name = 'win_layer')
+        self.bias = BiasUnit()
         self.input_hidden_connection = FullConnection(self.input_layer, self.hidden_layer, name = 'input_hidden_connection')
         self.hidden_output_connection = FullConnection(self.hidden_layer, self.output_layer, name = 'hidden_output_connection')
+        self.bias_hidden_connection = FullConnection(self.bias, self.hidden_layer, name = 'bias_connection')
 
         self.build_network()
         self.train_network()
@@ -150,8 +152,10 @@ class MLPTrainerManager(NetworkTrainerManager):
     def build_network(self):
         self.network.addInputModule(self.input_layer)
         self.network.addModule(self.hidden_layer)    
-        self.network.addOutputModule(self.output_layer)               
+        self.network.addOutputModule(self.output_layer)   
+        self.network.addModule(self.bias)            
         self.network.addConnection(self.input_hidden_connection)
+        self.network.addConnection(self.bias_hidden_connection)
         self.network.addConnection(self.hidden_output_connection)
         self.network.sortModules()
         print self.network
@@ -169,13 +173,22 @@ class MLPTrainerManager(NetworkTrainerManager):
 
         ally_node_list = []
         enemy_node_list = []
+        self.ally_validator_list = []
+        self.enemy_validator_list = []
 
+        print '------------ %s -------------' % self.prime
+        
         for p_ally in self.prime.ally_players.all():
             champion = p_ally.champion
+            self.ally_validator_list.append(champion)
             for i in self.prime.item.all():
                 node, created = self.get_node(self.prime.champion, champion, True, i)
                 
                 current_total = Player.objects.filter(champion = node.prime, ally_heroes = champion, item = i).count()
+                
+                # if current_total < 10:
+                #     continue
+
                 if created:
                     ally_node_list.append(node)
                     node.wins = Player.objects.filter(champion = node.prime, ally_heroes = champion, item = i, winner = True).count()
@@ -190,10 +203,15 @@ class MLPTrainerManager(NetworkTrainerManager):
 
         for p_enemy in self.prime.enemy_players.all():
             champion = p_enemy.champion
+            self.enemy_validator_list.append(champion)
             for i in p_enemy.item.all():
                 node, created = self.get_node(self.prime.champion, champion, False, i)
                 
                 current_total = Player.objects.filter(champion = node.prime, enemy_heroes = champion, item = i).count()
+                
+                # if current_total < 10:
+                #     continue
+
                 if created:
                     enemy_node_list.append(node)
                     node.wins = Player.objects.filter(champion = node.prime, enemy_heroes = champion, item = i, winner = True).count()
@@ -212,35 +230,67 @@ class MLPTrainerManager(NetworkTrainerManager):
 
     def train_network(self):
 
+        node_average_num = 0.0
+        node_average_denom = 0.0
+
+        training_set = SupervisedDataSet(len(self.node_set_list), OUTPUT_SET_INT)
+
         for i in xrange(0, len(self.node_set_list)):
             node = self.node_set_list[i]
-            try:
-                node.ally
-                print 'ALLY = ',node.ally
-            except:
-                print 'ENEMY = ',node.enemy
             input_set = [0]*len(self.node_set_list)
             input_set[i] = 1
-            print "Wins: ", node.wins
-            print 'totals: ', node.total
+            node_average_num += float(node.wins)
+            node_average_denom += float(node.total)
+            # try:
+            #     node.ally
+            #     print 'This is Ally Node: ', node.ally
+            # except:
+            #     print 'This is Enemy Node: ', node.enemy
+            # try:
+            #     average = float(node.wins)/float(node.total)
+            #     print 'Node Average = %s / %s = ' %(node.wins, node.total), average
+            # except:
+            #     pass
 
-            j = 0
-            k = 0
-            training_set = SupervisedDataSet(len(self.node_set_list), 1)
+            j = 1
+            k = 1
 
             while j <= node.wins:
-                training_set.appendLinked(input_set, [1])
+                training_set.addSample(input_set, [1])
                 j+=1
-            print 'win set length: ', j
-
             while k <= (node.total - node.wins):
-                training_set.appendLinked(input_set, [0])
+                training_set.addSample(input_set, [0])
                 k+=1
-            print 'loss set length: ', k
+        print 'Length of Dataset = ', len(training_set)
+        print 'TRAINING.......'
+        print "PRIOR TO TRANING WEIGHTS.... ", self.network.params
+        trainer = BackpropTrainer(self.network, training_set)
+        trainer.trainEpochs(epochs = len(training_set))
+
+        #trainer.trainUntilConvergence(verbose = True)
+        print 'Number of Nodes = ', len(self.node_set_list)
+        print "Pure Average = %s / %s = "%(node_average_num,node_average_denom), node_average_num/node_average_denom
+        print '---------------------------------'
 
     def run_network(self):
+        print 'AFTER TRAINING WEIGHTS..... ', self.network.params
         input_set = [1]*len(self.node_set_list)
         print self.network.activate(input_set)
+        print 'Allies: ', self.prime.ally_heroes
+        print 'Enemies: ', self.prime.enemy_heroes
+        print "Winner? ", self.prime.winner
+        champion = self.prime.champion
+        a_h = self.prime.ally_heroes.all()
+        e_h = self.prime.enemy_heroes.all()
+        print champion
+        print a_h
+        print e_h
+        matches = Player.objects.filter(champion = champion, ally_heroes = a_h , enemy_heroes = e_h).count()
+        won_matches = Player.objects.filter(champion = champion, ally_heroes = a_h , enemy_heroes = e_h , winner = True).count()
+        print '# Matches of Input: ',matches
+        print '# of Wins: ', won_matches
+        print 'Win % = %s %', float(won_matches)/float(matches)*100
+
 
 
 
@@ -370,9 +420,6 @@ class PrimeLinearTrainerManager(NetworkTrainerManager):
         return ally_node_list+enemy_node_list                       
 
 
-    # def reset_weight_for_training(self,node):
-    #     node.weight = 0.5
-    #     node.save()
 
 
 

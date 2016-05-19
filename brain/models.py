@@ -11,6 +11,8 @@ class NeuralNode(models.Model):
 
 
 
+
+
 #------- Item Nodes --------
 class ItemNode(NeuralNode):
     item = models.ForeignKey(Item)

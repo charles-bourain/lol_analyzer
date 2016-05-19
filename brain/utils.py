@@ -11,8 +11,8 @@ from brain.manager import PrimeLinearTrainerManager, MLPTrainerManager
 
 
 
-def test():
-    player = Player.objects.filter(match = 1)[1]
+def test(match_id):
+    player = Player.objects.filter(match = match_id)[1]
     z = MLPTrainerManager(player)
 
 

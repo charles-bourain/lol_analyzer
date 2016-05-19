@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+import dj_database_url
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -119,6 +120,8 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
+DATABASES = {}
+DATABASES['default'] = dj_database_url.config(default = 'postgres://dmfctpoqwzlrwt:2TsdipKnuNrLBBj3TXktnZMFhV@ec2-54-225-123-119.compute-1.amazonaws.com:5432/d9evmrbm0fob2h')
 
 STATIC_URL = '/static_files/'
 STATIC_ROOT = 'static'
