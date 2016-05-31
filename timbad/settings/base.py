@@ -86,7 +86,7 @@ WSGI_APPLICATION = 'timbad.wsgi.application'
 
 REQUEST_LIMITS = {
 "ten_second": 10,
-"ten_minute": 300,
+"ten_minute": 450,
 }
 
 

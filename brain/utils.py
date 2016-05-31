@@ -6,42 +6,49 @@ from pybrain.datasets.supervised import SupervisedDataSet
 from matches.utils import get_match_data
 import time
 
-from brain.manager import PrimeLinearTrainerManager, MLPTrainerManager
+from brain.manager import MLPTrainerManager, ChampionMLPTrainerManager
 
 
 
 
 def test(match_id):
     player = Player.objects.filter(match = match_id)[1]
-    z = MLPTrainerManager(player)
+    MLP_NN = MLPTrainerManager(player)
+    return MLP_NN.run_network()
+
+def check_match(match_id):
+    players = Player.objects.filter(match = match_id)
+
+    for player in players:
+        print 'Champion = ', player.champion
+        print 'Allys = ', player.ally_heroes
+        print 'Enemys = ', player.enemy_heroes
+        print 'Items = ', player.item
+
+def mass_test():
+
+    error_list = []
+    total = 0
+    wrong = 0
+    player_obj_list = Player.objects.all()
+    for player in player_obj_list:
+        MLP_NN = ChampionMLPTrainerManager(player)
+        NN_prediction, win_rate = MLP_NN.run_network()
+        if NN_prediction > 0.5:
+            win = True
+        else:
+            win = False
 
 
-def golds_gym():
-    for match in Match.objects.all():
-        
-        if len(Player.objects.filter(match = match)) > 0: 
-            print 'Match Exists, Skipping "get"'
-            continue
+        total+=1
+        print 'NN Prediction: %s -- Win Rate: %s' % (NN_prediction, win_rate)
+        if player.winner != win:
+            error_list.append((player, NN_prediction, win_rate))
+            wrong+=1
+        print "Percent Correct = ",((float(total)-float(wrong))/total)*100
+    return error_list
 
-        player_list = Player.objects.filter(match = match)
-        if len(player_list) == 0:
 
-            get_match_success = get_match_data(match)
-        
-            if not get_match_success:
-                print '-- FIRST PASS FAILED, 10 SECOND WAIT THEN SECOND ATTEMPT --'
-                time.sleep(10)
-                second_try_success = get_match_data(match)
-                if second_try_success:
-                    print 'Second attempt was successful'
-                else:
-                    print 'Second attempt unsuccessful, skipping: ', match
-                    continue
-            player_list = Player.objects.filter(match = match)
-         
-        for player in player_list:
-            m = PrimeLinearTrainerManager(player)
-            m.train_linear_network()
 
 
 def delete_all_nodes():

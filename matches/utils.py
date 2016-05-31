@@ -182,6 +182,12 @@ def get_match_data(match_obj, current_version):
                         player.enemy_heroes.add(j.champion)
                         player.enemy_players.add(j)
                     player.save()
+
+                print 'Champion = ', player.champion
+                print 'Allys = ', player.ally_heroes
+                print 'Enemys = ', player.enemy_heroes
+                print 'Items = ', player.item
+                       
         return True, True
     except:
         print 'Error Occured in Match Data for MATCH: ',match_id 

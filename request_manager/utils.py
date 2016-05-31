@@ -18,6 +18,7 @@ def requester(url, request_type):
         expired_manager_objs = Request.objects.filter(request_time__lte=expiration_time)
 
         if len(expired_manager_objs) == 0:
+            print 'Stalling...'
             earliest_request_time = Request.objects.order_by('-request_time')[0].request_time
 
             #Stall for 10mins - earliest_time + 1 second to ensure next look at manager list will delete some managers
@@ -26,7 +27,7 @@ def requester(url, request_type):
             expiration_time = timezone.now()-ten_min_time_del
             expired_manager_objs = Request.objects.filter(request_time__lte=expiration_time)
 
-        expired_manager_objs.delete()
+        expired_manager_objs.all().delete()
 
     try:
         last_request = Request.objects.order_by("-request_time")[0].request_time
@@ -47,6 +48,7 @@ def requester(url, request_type):
     if request_type == 'get':
         Request.objects.create()
         response = requests.get(url).json()
+        print 'got response'
         return response
 
 
