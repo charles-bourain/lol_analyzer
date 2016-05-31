@@ -175,19 +175,16 @@ def get_match_data(match_obj, current_version):
 
             for player in team:
                 for j in ally_team:
+
                     if player != j:
                             player.ally_heroes.add(j.champion)
                             player.ally_players.add(j)
-                    for j in enemy_team:
-                        
-                        player.enemy_heroes.add(j.champion)
-                        player.enemy_players.add(j)
-                player.save()
+                for j in enemy_team:
 
-                print 'Champion = ', player.champion
-                print 'Allys = ', player.ally_heroes
-                print 'Enemys = ', player.enemy_heroes
-                print 'Items = ', player.item
+                    player.enemy_heroes.add(j.champion)
+                    player.enemy_players.add(j)
+
+                player.save()
 
         return True, True
     except:
