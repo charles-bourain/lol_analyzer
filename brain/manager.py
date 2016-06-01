@@ -6,29 +6,13 @@ from pybrain.datasets.supervised import SupervisedDataSet
 from pybrain.tools.neuralnets import NNregression
 
 
+
+#Wrapper for pybrain - does not perform any specific analysis
 class NetworkManager(object):
     
     def __init__(self):
 
         self.network = FeedForwardNetwork()
-
-    def build_network(self):
-
-        try:
-            self.network.addInputModule(self.input_layer)    
-            self.network.addOutputModule(self.output_layer)               
-            self.network.addConnection(self.linear_connection)
-            self.network.sortModules()
-            self.replace_network_parms_with_node_values()
-        except(NameError):
-            pass
-
-    def replace_network_parms_with_node_values(self):
-        param_list = []
-        for node in self.node_set_list:
-            param_list.append(node.weight)
-        self.network._setParameters(param_list)
-
     
 
 
@@ -40,90 +24,17 @@ class NetworkTrainerManager(NetworkManager):
         data_set.appendLinked(self.input, target)
         self.dataset = data_set
 
-    def train(self, network, dataset, node_set):
 
-        if not isinstance(node_set, list):
-            node_set = [node_set]
+#Broken - Data is too specific and cannot train properly.
+#Plan - Set tags on Item models to group Items and build datasets based on the tags rather than specific items.
+#Item tags will be tagged on similiar items - armor, magic resist, AP, AD etc etc.
 
-        trainer = BackpropTrainer(network, dataset)
+#Network Layers:  Linear Input -> Tanh Hidden -> Tanh Hidden -> Sigmoid Output
+#All Nodes have a Bias
+#All Layers are fully connected
 
-        trainer.train()
-
-        new_weight_list = network.params
-
-        i=0
-        while i < len(node_set):
-            node_set[i].weight = network.params[i]
-            node_set[i].save()
-            i+=1
-
-
-
-
-# class PrimeTrainingNetworkManager(NetworkTrainerManager):
-
-#     def __init__(self, player_object):
-
-#         if not isinstance(player_object, Player):
-#             raise ValueError('Object: ', player_object, ' is not a Player Object')
-
-#         super(PrimeTrainingNetworkManager, self).__init__()            
-
-#         self.prime = player_object
-
-#         ally_node_list = []
-#         enemy_node_list = []
-
-#         for p_ally in self.prime.ally_players.all():
-#             champion = p_ally.champion
-#             for i in self.prime.item.all():
-#                 node = self.get_node(self.prime.champion, champion, True, i)
-#                 ally_node_list.append(node)
-
-#         for p_enemy in self.prime.enemy_players.all():
-#             champion = p_enemy.champion
-#             for i in p_enemy.item.all():
-#                 node = self.get_node(self.prime.champion, champion, False, i)
-#                 enemy_node_list.append(node)        
-
-#         self.input_layer = LinearLayer(len(ally_node_list+enemy_node_list), name = 'item_layer')
-#         self.input = [1]*len(ally_node_list+enemy_node_list)
-#         self.output_layer = LinearLayer(1, name = 'win_layer')
-#         self.linear_connection = FullConnection(self.input_layer, self.output_layer, name = 'c1')
-
-#         if self.prime.winner:
-#             self.target = [1]
-#         else:
-#             self.target = [0]
-        
-#         self.node_set_list = ally_node_list+enemy_node_list
-
-#         self.build_network()
-
-
-#     def get_node(self, prime_hero_obj, eval_hero_obj, ally_bool, item_obj):
-
-#         if ally_bool:
-#             node, created = ItemAllyNode.objects.get_or_create(prime = prime_hero_obj, ally = eval_hero_obj, item = item_obj)
-#         else:
-#             node, created = ItemEnemyNode.objects.get_or_create(prime = prime_hero_obj, enemy = eval_hero_obj, item = item_obj)
-
-#         total = 0
-        
-#         if created and ally_bool:
-#             wins = Player.objects.filter(champion = prime_hero_obj, ally_heroes = eval_hero_obj, item = item_obj, winner = True).count()
-#             total = Player.objects.filter(champion = prime_hero_obj, ally_heroes = eval_hero_obj, item = item_obj).count()
-#         elif created and not ally_bool:
-#             wins = Player.objects.filter(champion = prime_hero_obj, enemy_heroes = eval_hero_obj, item = item_obj, winner = True).count()
-#             total = Player.objects.filter(champion = prime_hero_obj, enemy_heroes = eval_hero_obj, item = item_obj).count()
-
-#         if total != 0:
-#             node.save()
-
-#         return node
-
-
-#This Manager is currently building node-sets ignoring items - datasets are not robust enough
+# MLPTrainerManager(player_object)
+    #Accepts only player object - player object will contain all needed match data included enemies and allies
 class MLPTrainerManager(NetworkTrainerManager):
 
     def __init__(self, player_object):
@@ -134,6 +45,9 @@ class MLPTrainerManager(NetworkTrainerManager):
         super(MLPTrainerManager, self).__init__()            
 
         self.prime = player_object
+
+        self.ally_validator_dict= {}
+        self.enemy_validator_dict = {}
 
         self.node_set_list = self.build_node_list()
 
@@ -185,20 +99,19 @@ class MLPTrainerManager(NetworkTrainerManager):
                 
         return ally_node_list+enemy_node_list
 
-#THIS FUNCTION HOLDS THE ITEM VERSION OF BUILD NODE LIST
     def build_node_list(self):
 
         ally_node_list = []
         enemy_node_list = []
-        self.ally_validator_list = []
-        self.enemy_validator_list = []
 
         print '------------ %s -------------' % self.prime
         
         for p_ally in self.prime.ally_players.all():
             champion = p_ally.champion
-            self.ally_validator_list.append(champion)
+            item_set = []
             for i in self.prime.item.all():
+                item_set.append(i)
+
                 node, created = self.get_node(self.prime.champion, champion, True, i)
                 
                 current_total = Player.objects.filter(champion = node.prime, ally_heroes = champion, item = i).count()
@@ -215,11 +128,13 @@ class MLPTrainerManager(NetworkTrainerManager):
                     node.wins = Player.objects.filter(champion = node.prime, ally_heroes = champion, winner = True, item = i).count()
                     # node.weight = 0.5 #TEMP -  Set up right now to re-run all matches, so needs to start from scratch.  Need an weight update function.
                     node.save()
+            self.ally_validator_dict[champion.name] = item_set
 
         for p_enemy in self.prime.enemy_players.all():
             champion = p_enemy.champion
-            self.enemy_validator_list.append(champion)
+            item_set = []
             for i in p_enemy.item.all():
+                item_set.append(i)
                 node, created = self.get_node(self.prime.champion, champion, False, i)
                 
                 current_total = Player.objects.filter(champion = node.prime, enemy_heroes = champion, item = i).count()
@@ -238,24 +153,28 @@ class MLPTrainerManager(NetworkTrainerManager):
                     node.wins = Player.objects.filter(champion = node.prime, enemy_heroes = champion, item = i, winner = True).count()
                     # node.weight = 0.5 #TEMP -  Set up right now to re-run all matches, so needs to start from scratch.  Need an weight update function.
                     node.save()
+            self.enemy_validator_dict[champion] = item_set
  
         return ally_node_list+enemy_node_list
     
 
     def train_network(self):
 
-        lost_matches = Player.objects.filter(champion = self.prime.champion, ally_heroes = self.prime.ally_heroes.all() , enemy_heroes = self.prime.enemy_heroes.all(), winner = False)
-        won_matches = Player.objects.filter(champion = self.prime.champion, ally_heroes = self.prime.ally_heroes.all() , enemy_heroes = self.prime.enemy_heroes.all() , winner = True)
-        print self.prime.ally_heroes.all()
-        print lost_matches[1].ally_heroes
 
-        for item in self.prime.item.all():
-            lost_matches = lost_matches.filter(item = item)
-            won_matches = won_matches.filter(item = item)
+        lost_matches = Player.objects.filter(champion = self.prime.champion, winner = False)
+        won_matches = Player.objects.filter(champion = self.prime.champion, winner = True)
 
+        for hero in self.prime.ally_heroes.all():
+            lost_matches = lost_matches.filter(ally_heroes = hero)
+            won_matches = won_matches.filter(ally_heroes = hero)
 
-        node_average_num = 0.0
-        node_average_denom = 0.0
+        for hero in self.prime.enemy_heroes.all():
+            lost_matches = lost_matches.filter(enemy_heroes = hero)
+            won_matches = won_matches.filter(enemy_heroes = hero)  
+
+        print 'Won Match Count = ', len(won_matches)
+        print 'Lost Match Count = ', len(lost_matches)          
+
 
         training_set = SupervisedDataSet(len(self.node_set_list), 1)
         validation_set = SupervisedDataSet(len(self.node_set_list), 1)
@@ -264,8 +183,6 @@ class MLPTrainerManager(NetworkTrainerManager):
             node = self.node_set_list[i]
             input_set = [0]*len(self.node_set_list)
             input_set[i] = 1
-            node_average_num += float(node.wins)
-            node_average_denom += float(node.total)
 
             j = 1
             k = 1
@@ -276,10 +193,25 @@ class MLPTrainerManager(NetworkTrainerManager):
             while k <= (node.total - node.wins):
                 training_set.addSample(input_set, [0])
                 k+=1
-        for i in won_matches:
-            validation_set.addSample([1]*len(input_set), [1])
-        for i in lost_matches:
-            validation_set.addSample([1]*len(input_set), [0])
+        for match in won_matches:
+            valid_match = True
+            if match.winner:
+                valid_winner = 1
+            else:
+                valid_winner = 0
+
+            while valid_match:
+                for p_ally in match.ally_players.all():
+                    print p_ally.item.all()
+                    print self.ally_validator_dict[p_ally.champion.name]
+                    if p_ally.item.all() != self.ally_validator_dict[p_ally.champion.name]:
+                        print 'Not a valid match, skipping'
+                        valid_match = False
+
+            if valid_match == True:
+                validation_set.addSample([1]*len(input_set), [valid_winner])
+
+            
         print 'Length of Dataset = ', len(training_set)
         print 'length of valid set = ', len(validation_set)
         trainer = BackpropTrainer(self.network, learningrate = 0.5)
@@ -296,12 +228,9 @@ class MLPTrainerManager(NetworkTrainerManager):
         return self.network.activate(input_set)[0], str(float(won_matches)/float(matches))
 
 
-
-
-
-
-
-
+#Does not take into account any items to predict team vs team win chance
+#Uses data of single hero vs single hero has training sets and validates against actual team vs. team sets
+#inheritance all MLPTrainerManager.  Overwrites build_node_list function and train_network function to focus on hero vs hero
 class ChampionMLPTrainerManager(MLPTrainerManager):
     
     def build_node_list(self):
@@ -356,6 +285,54 @@ class ChampionMLPTrainerManager(MLPTrainerManager):
                 node.wins = Player.objects.filter(champion = node.prime, enemy_heroes = champion, winner = True).count()
                 # node.weight = 0.5 #TEMP -  Set up right now to re-run all matches, so needs to start from scratch.  Need an weight update function.
                 node.save()
+
+        return ally_node_list+enemy_node_list
+
+    def train_network(self):
+
+
+        lost_matches = Player.objects.filter(champion = self.prime.champion, winner = False, ally_heroes__in = self.prime.ally_heroes.all(), enemy_heroes__in = self.prime.enemy_heroes.all()).count()
+        won_matches = Player.objects.filter(champion = self.prime.champion, winner = True, ally_heroes__in = self.prime.ally_heroes.all(), enemy_heroes__in = self.prime.enemy_heroes.all()).count()
+
+        print 'Won Match Count = ', won_matches
+        print 'Lost Match Count = ', lost_matches       
+
+        training_set = SupervisedDataSet(len(self.node_set_list), 1)
+        validation_set = SupervisedDataSet(len(self.node_set_list), 1)
+
+        for i in xrange(0, len(self.node_set_list)):
+            node = self.node_set_list[i]
+            input_set = [0]*len(self.node_set_list)
+            input_set[i] = 1
+
+            j = 1
+            k = 1
+
+            while j <= node.wins:
+                training_set.addSample(input_set, [1])
+                j+=1
+            while k <= (node.total - node.wins):
+                training_set.addSample(input_set, [0])
+                k+=1
+        for i in xrange(0, won_matches):
+                validation_set.addSample([1]*len(input_set), [1])
+        for i in xrange(0,lost_matches):
+                validation_set.addSample([1]*len(input_set), [0])
+
+        print 'Length of Dataset = ', len(training_set)
+        print 'length of valid set = ', len(validation_set)
+
+        trainer = BackpropTrainer(self.network, learningrate = 0.5)
+
+        trainer.trainUntilConvergence(validationData = validation_set, trainingData = training_set, continueEpochs = 10, maxEpochs = 100, convergence_threshold = 1)
+
+    def run_network(self):
+
+        lost_matches = Player.objects.filter(champion = self.prime.champion, winner = False, ally_heroes__in = self.prime.ally_heroes.all(), enemy_heroes__in = self.prime.enemy_heroes.all()).count()
+        won_matches = Player.objects.filter(champion = self.prime.champion, winner = True, ally_heroes__in = self.prime.ally_heroes.all(), enemy_heroes__in = self.prime.enemy_heroes.all()).count()
+
+        input_set = [1]*len(self.node_set_list)
+        return self.network.activate(input_set)[0], str(float(won_matches)/float(won_matches+lost_matches))
 
 
         
