@@ -3,7 +3,6 @@ from matches.models import Player, Match
 from pybrain.structure import FeedForwardNetwork, FullConnection, LinearLayer, SigmoidLayer, RecurrentNetwork, BiasUnit, TanhLayer
 from pybrain.supervised.trainers import BackpropTrainer, RPropMinusTrainer # trainer = BackpropTrainer(network, dataset)
 from pybrain.datasets.supervised import SupervisedDataSet
-from pybrain.tools.neuralnets import NNregression
 import Queue
 import pprint
 
