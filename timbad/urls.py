@@ -22,5 +22,6 @@ urlpatterns = [
     url(r'^heroes/', include('heroes.urls')),
     url(r'^items/', include('items.urls')),
     url(r'^matches/', include('matches.urls')),
+    url(r'', include('brain.urls')),
 
 ]

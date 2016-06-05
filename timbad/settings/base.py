@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'runes',
     'masteries',
     'brain',
+    'crispy_forms',
 ]
 
 MIDDLEWARE_CLASSES = (
