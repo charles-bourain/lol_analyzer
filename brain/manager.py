@@ -14,26 +14,23 @@ INPUTS:
 hidden_layers: Integer - the amount of hidden layers desired
 ally_champ_obj_list: List of heroes.models.Hero objects
 enemy_champ_obj_list: List of heroes.models.Hero objects
-pivot_data: {'type': String, 'data': list of objects} - for more complex NN, will define the information that the NN will pivot around
 
 METHODS:
 set_nodes: builds/gets node NOTE: Temporarily builds into a dictionary.  Real version will input into DB for future calls
 train_network: builds datasets and runs trainers
 run_network: Runs the network as if all data is present
+get_node_count: Returns the amount of inputs for the given network
 
 
 """
 class NetworkManager(object):
     
-    def __init__(self, hidden_layers, ally_champ_obj_list, enemy_champ_obj_list, pivot_data = None):
+    def __init__(self, hidden_layers, ally_champ_obj_list, enemy_champ_obj_list):
 
         self.ally_champ_obj_list = ally_champ_obj_list
         self.enemy_champ_obj_list = enemy_champ_obj_list
-        self.pivot_data = pivot_data
 
-        self.input_node_count = (len(ally_champ_obj_list)+len(enemy_champ_obj_list))
-        if pivot_data:
-            self.input_node_count = self.input_node_count*(self.input_node_count-1)*len(pivot_data['data'])
+        self.set_nodes()
 
         self.network = FeedForwardNetwork()
 
@@ -67,15 +64,18 @@ class NetworkManager(object):
 
         self.network.sortModules()
 
+    def get_node_count(self):
+        return (len(self.ally_champ_obj_list)+len(self.enemy_champ_obj_list))
 
-#THIS IS TEMPORARY - I SHOULD HAVE NODES PRE BUILT WITH DATA ALREADY STORED - GETTING NODES WILL HAPPEN IN TRAIN NETWORK
-    def set_nodes(self):
+    def set_nodes(self): #TEMPORARY SET_NODE - PERFORMS QUERYSET EVERYTIME - SHOULD EVENTUALLY STORE VALUES AS NODES
         node_list = {}
+        match_count = 0
         champion_list = list(enumerate(self.ally_champ_obj_list + self.enemy_champ_obj_list))
-
         while len(champion_list) != 0:
             pid, prime = champion_list.pop()
             data = {}
+            queryset = Player.objects.filter(champion = prime) 
+
             for (cid, champ) in champion_list:
                 
                 if pid <= 4 and cid <=4:
@@ -86,15 +86,17 @@ class NetworkManager(object):
                     ally = False
                 
                 if ally:
-                    matches = Player.objects.filter(champion = prime, ally_heroes = champ)
+                    matches = queryset.filter(ally_heroes = champ)
                 else:
-                    matches = Player.objects.filter(champion = prime, ally_heroes = champ)
+                    matches = queryset.filter(enemy_heroes = champ)
+                match_count += len(matches)
 
                 data[champ] = {'ally':ally, 'wins':matches.filter(winner = True).count(), 'loses':matches.filter(winner = False).count()}
 
                 node_list[prime] = data
+
         self.node_set = node_list
-        pprint.pprint(self.node_set)
+        self.input_node_count = len(champion_list)
 
     def train_network(self):
 
@@ -105,6 +107,7 @@ class NetworkManager(object):
         while len(champion_list) != 0:
             pid, prime = champion_list.pop()
             for (cid, champ) in champion_list:
+
                 input_set = [0]*self.input_node_count
                 input_set[pid] = 1
                 input_set[cid] = 1
@@ -135,7 +138,14 @@ class NetworkManager(object):
             print 'Raw Win Rate = ', str(float(validation_wins)/float(validation_wins+validation_loses))    
 
         trainer = BackpropTrainer(self.network, learningrate = 0.5)
-        trainer.trainUntilConvergence(validationData = validation_set, trainingData = training_set, dataset = training_set, continueEpochs = 10, maxEpochs = 100, convergence_threshold = 1)
+        trainer.trainUntilConvergence(validationData = validation_set, 
+            trainingData = training_set, 
+            dataset = training_set, 
+            continueEpochs = 10, 
+            maxEpochs = 50, 
+            convergence_threshold = 1,
+            )
+
         return  str(float(validation_wins)/float(validation_wins+validation_loses))
 
     def run_network(self):
@@ -143,6 +153,111 @@ class NetworkManager(object):
         input_set = [1]*self.input_node_count
         return self.network.activate(input_set)      
 
+
+
+"""
+INPUTS:
+    Inherits from NetworkManager
+    pivot_data: 
+        {'type': String, 
+        'data': {'hero_obj': [list of objects]}} - for more complex NN, will define the information that the NN will pivot around
+
+METHODS:
+
+ATTRIBUTES:
+
+
+"""
+class PivotNetworkManager(NetworkManager):
+
+    def __init__(self, hidden_layers, ally_champ_obj_list, enemy_champ_obj_list, pivot_data):
+
+        self.pivot_data = pivot_data['data']
+        self.pivot_type = pivot_data['type']        
+
+        super(PivotNetworkManager, self).__init__(hidden_layers, ally_champ_obj_list, enemy_champ_obj_list)
+
+        
+
+    def get_node_count(self):
+        if self.pivot_type == 'items':
+            data_length = 7
+        elif self.pivot_type == 'mastery':
+            data_length = 10
+        return (len(self.ally_champ_obj_list)+len(self.enemy_champ_obj_list))*(len(self.ally_champ_obj_list)+len(self.enemy_champ_obj_list)-1)*data_length
+
+    def set_nodes(self):
+        last_key = 0
+        node_list = {}
+        champion_list = list(enumerate(self.ally_champ_obj_list + self.enemy_champ_obj_list))
+        for pid, prime in champion_list:
+            node_list[prime] = {}
+            for cid, champ in champion_list:
+                if prime == champ:
+                    continue
+                if (pid <= 4 and cid <=4) or (pid > 4 and cid > 4):
+                    ally = True
+                    player_list = Player.objects.filter(champion = champ, ally_heroes = prime)
+                else:
+                    ally = False
+                    player_list = Player.objects.filter(champion = champ, enemy_heroes = prime)
+
+                node_list[prime][champ] = {'ally':ally,'data':{}}
+
+                for key, item in enumerate(self.pivot_data[champ], start = last_key+1):
+                    nodes = player_list.filter(item = item)
+                    node_wins = nodes.filter(winner = True).count()
+                    node_lost = nodes.filter(winner = False).count()
+                    node_list[prime][champ]['data'][item] = {'wins':node_wins, 'loses':node_lost}
+                    last_key = key
+
+        self.node_set = node_list
+        self.input_node_count = last_key
+
+    def train_network(self):
+
+        training_set = SupervisedDataSet(self.input_node_count, 1)
+        validation_set = SupervisedDataSet(self.input_node_count, 1)
+
+
+        next_key = 0
+        for prime in self.node_set:
+            for champ in self.node_set[prime]:
+                for key, item in enumerate(self.pivot_data[champ], start = next_key):
+
+                    input_set = [0]*self.input_node_count
+                    input_set[key] = 1
+
+                    wins = self.node_set[prime][champ]['data'][item]['wins']
+                    loses = self.node_set[prime][champ]['data'][item]['loses']
+                    next_key = key+1
+
+                    for win in xrange(0, wins):  
+                        training_set.addSample(input_set, [1])
+                    for loss in xrange(0, loses):
+                        training_set.addSample(input_set, [0])
+
+        # validation_queryset = Player.objects.filter(champion = prime, ally_heroes__in = ally_list, enemy_heroes__in = enemy_list)
+        # validation_wins = validation_queryset.filter(winner = True).count()
+        # validation_loses = validation_queryset.filter(winner = False).count()
+
+        # for win in xrange(0, validation_wins):
+        #     validation_set.addSample([1]*self.input_node_count, [1])
+        # for loss in xrange(0, validation_loses):
+        #     validation_set.addSample([1]*self.input_node_count, [0])
+
+        # if not validation_set:
+        #     print 'There is no Validation Set, more error in output'
+        # else:
+        #     print 'Raw Win Rate = ', str(float(validation_wins)/float(validation_wins+validation_loses))    
+
+        trainer = BackpropTrainer(self.network, learningrate = 0.5)
+        trainer.trainUntilConvergence( 
+            dataset = training_set, 
+            continueEpochs = 10, 
+            maxEpochs = 50, 
+            convergence_threshold = 1,
+            )
 
 
 

@@ -6,7 +6,8 @@ from pybrain.datasets.supervised import SupervisedDataSet
 from matches.utils import get_match_data
 import time
 
-from brain.manager import MLPTrainerManager, ChampionMLPTrainerManager
+from .manager import PivotNetworkManager
+
 
 
 
@@ -16,14 +17,32 @@ def test(match_id):
     MLP_NN = MLPTrainerManager(player)
     return MLP_NN.run_network()
 
-def check_match(match_id):
+def test_pivot_network(match_id):
     players = Player.objects.filter(match = match_id)
+    prime_player = players[0]
+    ally_team_queryset = prime_player.ally_heroes.all()
+    enemy_team_queryset = prime_player.enemy_heroes.all()
+    ally_team = map(lambda x:x, ally_team_queryset)
+    enemy_team = map(lambda x:x, enemy_team_queryset)
+
+    ally_team.append(prime_player.champion)
+
+
+    data = {}
+    data['type'] = 'items'
+    data['data'] = {}
 
     for player in players:
-        print 'Champion = ', player.champion
-        print 'Allys = ', player.ally_heroes
-        print 'Enemys = ', player.enemy_heroes
-        print 'Items = ', player.item
+        data['data'][player.champion] = player.item.all().values_list('id', flat = True)
+    print '--- Creating Network ---'
+    network = PivotNetworkManager(2, ally_team, enemy_team, data)
+
+    print '--- Training Network ---'
+    network.train_network()
+
+    print '--- Running Network ---'
+    print 'Prediction = ', network.run_network()
+    print 'Actual Winner = ', prime_player.winner
 
 def mass_test():
 
@@ -54,6 +73,7 @@ def mass_test():
 def delete_all_nodes():
     ItemAllyNode.objects.all().delete()
     ItemEnemyNode.objects.all().delete()
+
 
     
 

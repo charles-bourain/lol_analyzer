@@ -2,10 +2,14 @@ from django.db import models
 from heroes.models import Hero
 
 # Create your models here.
+
+class ItemTag(models.Model):
+    tag = models.CharField(max_length = 20)
+
 class Item(models.Model):
     name = models.CharField(max_length = 50)
     riot_id = models.IntegerField()
-    tag = models.CharField(max_length = 100)
+    tag = models.ForeignKey(ItemTag)
     image = models.CharField(max_length = 1000)
     FlatArmorMod = models.IntegerField(default = 0, blank = True, null = True)  
     FlatAttackSpeedMod = models.IntegerField(default = 0, blank = True, null = True)   
@@ -77,5 +81,4 @@ class Item(models.Model):
         return unicode("Riot ID "+str(self.riot_id)+" "+self.name)
 
 class ItemTag(models.Model):
-	item = models.ForeignKey(Item)
 	tag = models.CharField(max_length = 20)

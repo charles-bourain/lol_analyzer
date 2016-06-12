@@ -23,7 +23,6 @@ class BrainView(FormView):
                     enemy_list.append(form.cleaned_data[i])
 
             NN_network = NetworkManager(hidden_layers = 2, ally_champ_obj_list = ally_list, enemy_champ_obj_list = enemy_list)
-            NN_network.set_nodes()
             raw_win_rate = NN_network.train_network()
             NN_prediction = NN_network.run_network()
 

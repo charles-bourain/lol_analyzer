@@ -13,11 +13,15 @@ from items.models import Item
 #   E) Riot.API.get match details (Requests = # of match played by each player) (Repeats are ignored)
 
 
+
+
+
+
 class Match(models.Model):
     match_id = models.SlugField()
 
     def __unicode__(self):
-            return "Match ID: "+unicode(self.match_id)
+            return "Match ID: "+unicode(self.match_id, self.id)
 
 class Player(models.Model):  
 
@@ -65,3 +69,5 @@ class Player(models.Model):
  
     def __unicode__(self):
         return unicode(self.match.id) +" "+ unicode(self.champion)
+
+

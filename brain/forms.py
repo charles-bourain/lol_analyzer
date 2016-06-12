@@ -11,9 +11,11 @@ class HeroForm(forms.Form):
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Submit'))
-    queryset = Hero.objects.all()
-    ally_1 = forms.ModelChoiceField(queryset = queryset, )
-    ally_2 = forms.ModelChoiceField(queryset = queryset, )
+    
+    queryset = Hero.objects.all().order_by('name')
+    
+    ally_1 = forms.ModelChoiceField(queryset = queryset,)
+    ally_2 = forms.ModelChoiceField(queryset = queryset,)
     ally_3 = forms.ModelChoiceField(queryset = queryset, )
     ally_4 = forms.ModelChoiceField(queryset = queryset, )
     ally_5 = forms.ModelChoiceField(queryset = queryset, )
