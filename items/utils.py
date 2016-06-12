@@ -1,6 +1,8 @@
 from django.conf import settings
 from items.models import Item, ItemTag
 from request_manager.utils import requester
+import pprint
+import time
 
 def request_all_item_info():
 
@@ -112,8 +114,84 @@ def request_all_item_info():
         except:
             print 'ERROR, item ID = ', item_data[item]['id']
 
-            
+def assign_all_tags():
+    all_item_request = requester('https://global.api.pvp.net/api/lol/static-data/na/v1.2/item?itemListData=all&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d','get')
+    item_data = all_item_request['data']
+    error_list = []
+    unassigned_enchantment = [] 
+
+    for item in item_data:
+        item_obj = Item.objects.get(riot_id = item_data[item]['id'])
+        print '--- {} ---'.format(item_data[item]['name'])
+
+
+        if item_data[item]['name'].startswith('Enchantment'):
+            for stats in item_data[item]['stats']:
+                if stats == 'PercentAttackSpeedMod':
+                    assign_tag(item_obj, 'AttackSpeed')
+                elif stats == 'FlatHPPoolMod':
+                    assign_tag(item_obj, 'Health')
+                elif stats == 'FlatMagicDamageMod':
+                    assign_tag(item_obj, 'SpellDamage')
+                elif stats == 'PercentMovementSpeedMod':
+                    assign_tag(item_obj, 'NonbootsMovement')
+                elif stats == 'FlatPhysicalDamageMod':
+                    assign_tag(item_obj, 'Damage')
+                else:
+                    unassigned_enchantment.append((item_data[item]['name'], item_data[item]['stats'] ))
+            continue
         
+        try:
+            item_data[item]['consumed']
+            assign_tag(item_obj, 'Consumable')
+            continue
+        except:
+            pass
+
+        try:
+            for tag in item_data[item]['tags']:
+                assign_tag(item_obj, tag)
+            continue
+        except:
+            pass
+
+        # if item_data[item]['inStore'] == False:
+        #     print 'ITEM NOT IN STORE'
+        #     continue
+
+        try:
+            item_data[item]['requiredChampion'] = 'Viktor'
+
+            for tag in ['Mana', 'SpellDamage']:
+                assign_tag(item_obj, tag)
+            continue
+        except:
+            pass
+        error_list.append(item_data[item])
+    for item in error_list:
+        pprint.pprint(item)
+    pprint.pprint(unassigned_enchantment)
+
+    print "Amount of Errors: ", len(error_list)
+
+
+def assign_tag(item_obj, tag_string):
+    tag, created = ItemTag.objects.get_or_create(tag = str(tag_string))
+    if created:
+        tag.save()
+    
+    item_obj.tag.add(tag)
+    item_obj.save()
+
+
+
+
+
+
+
+
+
+
         # for tag in list(raw_tag):
         #     item_tag, tag_created = ItemTag.objects.get_or_create(item = item, tag = tag)
         #     if tag_created == True:

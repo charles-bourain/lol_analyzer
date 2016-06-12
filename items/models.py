@@ -6,10 +6,13 @@ from heroes.models import Hero
 class ItemTag(models.Model):
     tag = models.CharField(max_length = 20)
 
+    def __unicode__(self):
+        return unicode(self.tag)    
+
 class Item(models.Model):
     name = models.CharField(max_length = 50)
     riot_id = models.IntegerField()
-    tag = models.ForeignKey('items.ItemTag')
+    tag = models.ManyToManyField('items.ItemTag')
     image = models.CharField(max_length = 1000)
     FlatArmorMod = models.IntegerField(default = 0, blank = True, null = True)  
     FlatAttackSpeedMod = models.IntegerField(default = 0, blank = True, null = True)   
