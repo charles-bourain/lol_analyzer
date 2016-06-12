@@ -9,7 +9,7 @@ class ItemTag(models.Model):
 class Item(models.Model):
     name = models.CharField(max_length = 50)
     riot_id = models.IntegerField()
-    tag = models.ForeignKey(ItemTag)
+    tag = models.ForeignKey('items.ItemTag')
     image = models.CharField(max_length = 1000)
     FlatArmorMod = models.IntegerField(default = 0, blank = True, null = True)  
     FlatAttackSpeedMod = models.IntegerField(default = 0, blank = True, null = True)   
@@ -80,5 +80,3 @@ class Item(models.Model):
     def __unicode__(self):
         return unicode("Riot ID "+str(self.riot_id)+" "+self.name)
 
-class ItemTag(models.Model):
-	tag = models.CharField(max_length = 20)
