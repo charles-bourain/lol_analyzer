@@ -175,8 +175,14 @@ def update_league(*args):
             match, created  = Match.objects.get_or_create(match_id = match['matchId'])
             if created:
                 match.save()
-                print '--- Getting Match Data for {}'.format(match.id)
-                get_match_data(match)
+                print '--- Getting Match Data for {}'.format(match.match_id)
+                version_match, got_data = get_match_data(match)
+                if not version_match:
+                    break
+                if not got_data:
+                    version_match, second_attempt = get_match_data(match)
+                    if second_attempt = False:
+                        print 'Error getting data for Match {}'.format(match.match_id)
 
 
     def get_match_data(match_obj):
@@ -192,7 +198,7 @@ def update_league(*args):
             status_code = match_data['status']['status_code']
             status_message = match_data['status']['message']
             print 'REQUEST ERROR: %s -- %s' %(status_code, status_message)
-            return False, True
+            return True, False
         except:
             pass
 
@@ -201,7 +207,7 @@ def update_league(*args):
                 print 'Current Version = %s :: Match Version = %s'% (current_version, match_data['matchVersion'] )
                 print 'Not Current Version, Skipping'
                 match_obj.delete()
-                return break
+                return False, False
             for team in match_data['teams']:
                 if team['winner'] == True:
                         winning_team = team['teamId']
@@ -295,9 +301,10 @@ def update_league(*args):
                         player.enemy_players.add(j)
 
                     player.save()
-
+            return True, True
         except:
             print 'Error Occured in Match Data for MATCH: ',match_id 
+            return True, False
 
 
      
