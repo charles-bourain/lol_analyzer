@@ -9,7 +9,7 @@ import requests
 
 
 class Request(object):
-    last_request_time = datetime.now()
+    last_request_time = datetime.datetime.now()
 def requester(url, request_type):
     print 'REQUEST HIT'
     one_sec_time_del = datetime.timedelta(seconds = 1)

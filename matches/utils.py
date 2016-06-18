@@ -181,7 +181,7 @@ def update_league(*args):
                     break
                 if not got_data:
                     version_match, second_attempt = get_match_data(match)
-                    if second_attempt = False:
+                    if second_attempt == False:
                         print 'Error getting data for Match {}'.format(match.match_id)
 
 
