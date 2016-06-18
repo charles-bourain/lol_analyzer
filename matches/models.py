@@ -21,7 +21,7 @@ class Match(models.Model):
     match_id = models.SlugField()
 
     def __unicode__(self):
-            return "Match ID: "+unicode(self.match_id, self.id)
+            return "Match ID: "+unicode(self.match_id)
 
 class Player(models.Model):  
 

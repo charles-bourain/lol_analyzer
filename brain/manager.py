@@ -71,6 +71,7 @@ class NetworkManager(object):
         node_list = {}
         match_count = 0
         champion_list = list(enumerate(self.ally_champ_obj_list + self.enemy_champ_obj_list))
+        self.input_node_count = len(champion_list)
         while len(champion_list) != 0:
             pid, prime = champion_list.pop()
             data = {}
@@ -96,7 +97,6 @@ class NetworkManager(object):
                 node_list[prime] = data
 
         self.node_set = node_list
-        self.input_node_count = len(champion_list)
 
     def train_network(self):
 
@@ -120,10 +120,22 @@ class NetworkManager(object):
                 for loss in xrange(0, loses):
                     training_set.addSample(input_set, [0])
 
+        print 'Training Set Length = ', len(training_set)
+
         ally_list = self.ally_champ_obj_list
         enemy_list = self.enemy_champ_obj_list
         prime = ally_list.pop()
-        validation_queryset = Player.objects.filter(champion = prime, ally_heroes__in = ally_list, enemy_heroes__in = enemy_list)
+        validation_queryset = Player.objects.filter(champion = prime)
+        print len(validation_queryset)
+        for ally in ally_list:
+            validation_queryset = validation_queryset.filter(ally_heroes = ally)
+            print len(validation_queryset)
+        for enemy in enemy_list:
+            validation_queryset = validation_queryset.filter(enemy_heroes = enemy)
+            print len(validation_queryset)
+
+        print 'Validation Set Length = ',len(validation_queryset)
+
         validation_wins = validation_queryset.filter(winner = True).count()
         validation_loses = validation_queryset.filter(winner = False).count()
 
@@ -173,6 +185,14 @@ class PivotNetworkManager(NetworkManager):
     def __init__(self, hidden_layers, ally_champ_obj_list, enemy_champ_obj_list, pivot_data):
 
         self.pivot_data = pivot_data['data']
+        # if pivot_data['type'] == 'item':
+        #     tag_pivot = {}
+        #     for champ in pivot_data['data']:
+        #         tag_pivot[champ] = []
+        #         for item in pivot_data['data']:
+        #             tag_pivot[champ].append(item.tag)
+        #     self.pivot_data = tag_pivot
+
         self.pivot_type = pivot_data['type']        
 
         super(PivotNetworkManager, self).__init__(hidden_layers, ally_champ_obj_list, enemy_champ_obj_list)
@@ -190,7 +210,9 @@ class PivotNetworkManager(NetworkManager):
         last_key = 0
         node_list = {}
         champion_list = list(enumerate(self.ally_champ_obj_list + self.enemy_champ_obj_list))
+        print champion_list
         for pid, prime in champion_list:
+            print 'Nodeset Prime = ', prime
             node_list[prime] = {}
             for cid, champ in champion_list:
                 if prime == champ:
@@ -203,9 +225,9 @@ class PivotNetworkManager(NetworkManager):
                     player_list = Player.objects.filter(champion = champ, enemy_heroes = prime)
 
                 node_list[prime][champ] = {'ally':ally,'data':{}}
-
                 for key, item in enumerate(self.pivot_data[champ], start = last_key+1):
-                    nodes = player_list.filter(item = item)
+                    item_obj_list = Item.objects.filter(tag__in = item.tag.all())
+                    nodes = player_list.filter(item__in = item_obj_list)
                     node_wins = nodes.filter(winner = True).count()
                     node_lost = nodes.filter(winner = False).count()
                     node_list[prime][champ]['data'][item] = {'wins':node_wins, 'loses':node_lost}
@@ -219,11 +241,10 @@ class PivotNetworkManager(NetworkManager):
         training_set = SupervisedDataSet(self.input_node_count, 1)
         validation_set = SupervisedDataSet(self.input_node_count, 1)
 
-
         next_key = 0
         for prime in self.node_set:
             for champ in self.node_set[prime]:
-                for key, item in enumerate(self.pivot_data[champ], start = next_key):
+                for key, item in enumerate(self.node_set[prime][champ]['data'], start = next_key):
 
                     input_set = [0]*self.input_node_count
                     input_set[key] = 1
@@ -237,21 +258,67 @@ class PivotNetworkManager(NetworkManager):
                     for loss in xrange(0, loses):
                         training_set.addSample(input_set, [0])
 
-        # validation_queryset = Player.objects.filter(champion = prime, ally_heroes__in = ally_list, enemy_heroes__in = enemy_list)
-        # validation_wins = validation_queryset.filter(winner = True).count()
-        # validation_loses = validation_queryset.filter(winner = False).count()
+        print 'Training Set Length = ', len(training_set)
 
-        # for win in xrange(0, validation_wins):
-        #     validation_set.addSample([1]*self.input_node_count, [1])
-        # for loss in xrange(0, validation_loses):
-        #     validation_set.addSample([1]*self.input_node_count, [0])
+        ally_list = self.ally_champ_obj_list
+        enemy_list = self.enemy_champ_obj_list
+        print '-- Ally List --'
+        pprint.pprint(ally_list)
+        print '-- Enemy List --'
+        pprint.pprint(enemy_list)
+        prime = ally_list.pop()
+        print ally_list
+        #Get all Matches numbers that have the team vs. team comp
+
+        validation_queryset = Player.objects.filter(champion = prime)
+        for ally in ally_list:
+            validation_queryset = validation_queryset.filter(ally_heroes = ally)
+        for enemy in enemy_list:
+            validation_queryset = validation_queryset.filter(enemy_heroes = enemy)
+
+        validation_queryset = validation_queryset.distinct().values_list('match')
+
+        valid_set = {'wins':0, 'loses':0}
+
+        for match in validation_queryset:
+            player_list = Player.objects.filter(match = match)
+            valid = True
+            for player in player_list:
+                print '---Player tags---'
+                tag_list = []
+                for item in player.item.all():
+                    tag_list.append(item.tag.all())
+                print tag_list
+                print '--- Input Data ---'
+                match_tag_list = []
+                for item in self.pivot_data[player.champion]:
+                    match_tag_list.append(item.tag.all())
+                print match_tag_list
+                if tag_list.sort() != match_tag_list.sort():
+                    print 'NO MATCH'
+                    valid = False
+                    break
+                if player.champion == prime:
+                    prime_player = player
+            if valid:
+                if prime_player.winner:
+                    valid_set['wins'] += 1
+                else:
+                    valid_set['loses'] += 1
+        print 'VALID SET = ',valid_set
+
+        for win in xrange(0, valid_set['wins']):
+            validation_set.addSample([1]*self.input_node_count, [1])
+        for loss in xrange(0, valid_set['loses']):
+            validation_set.addSample([1]*self.input_node_count, [0])
 
         # if not validation_set:
         #     print 'There is no Validation Set, more error in output'
         # else:
         #     print 'Raw Win Rate = ', str(float(validation_wins)/float(validation_wins+validation_loses))    
 
-        trainer = BackpropTrainer(self.network, learningrate = 0.5)
+        trainer = BackpropTrainer(self.network, dataset = training_set, learningrate = 0.5)
+        
         trainer.trainUntilConvergence( 
             dataset = training_set, 
             continueEpochs = 10, 

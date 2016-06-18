@@ -7,12 +7,12 @@ class ItemTag(models.Model):
     tag = models.CharField(max_length = 20)
 
     def __unicode__(self):
-        return unicode(self.tag)    
+        return unicode(str(self.tag))    
 
 class Item(models.Model):
     name = models.CharField(max_length = 50)
     riot_id = models.IntegerField()
-    tag = models.ManyToManyField('items.ItemTag')
+    tag = models.ManyToManyField(ItemTag)
     image = models.CharField(max_length = 1000)
     FlatArmorMod = models.IntegerField(default = 0, blank = True, null = True)  
     FlatAttackSpeedMod = models.IntegerField(default = 0, blank = True, null = True)   
