@@ -6,6 +6,10 @@ import time
 import json
 import requests
 
+
+
+class Request(object):
+    last_request_time = datetime.now()
 def requester(url, request_type):
     print 'REQUEST HIT'
     one_sec_time_del = datetime.timedelta(seconds = 1)

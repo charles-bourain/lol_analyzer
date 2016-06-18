@@ -201,7 +201,7 @@ def update_league(*args):
                 print 'Current Version = %s :: Match Version = %s'% (current_version, match_data['matchVersion'] )
                 print 'Not Current Version, Skipping'
                 match_obj.delete()
-                return False, False
+                return break
             for team in match_data['teams']:
                 if team['winner'] == True:
                         winning_team = team['teamId']
@@ -296,10 +296,8 @@ def update_league(*args):
 
                     player.save()
 
-            return True, True
         except:
             print 'Error Occured in Match Data for MATCH: ',match_id 
-            return False, True
 
 
      
