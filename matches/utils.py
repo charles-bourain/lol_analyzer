@@ -20,9 +20,10 @@ def get_match_list(summoner_id):
     match_list_url = 'https://na.api.pvp.net/api/lol/na/v2.2/matchlist/by-summoner/%s?seasons=%s&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d' % (summoner_id, CURRENT_SEASON)
     try:
         match_request = requester(match_list_url,'get')
+        return match_request['matches']
     except:
         print "Match List Request Failed"
-    return match_request['matches']
+    
 
 def create_match_obj(match_id):
     match_url = 'https://na.api.pvp.net/api/lol/na/v2.2/match/%s?api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d' % match_id
