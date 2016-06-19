@@ -23,6 +23,7 @@ def get_match_list(summoner_id):
         return match_request['matches']
     except:
         print "Match List Request Failed"
+        return []
     
 
 def create_match_obj(match_id):
