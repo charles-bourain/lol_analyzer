@@ -2,15 +2,19 @@ from django.db import models
 from heroes.models import Hero
 from items.models import Item
 from masteries.models import Mastery
+from picklefield.fields import PickledObjectField
 
 # Create your models here.
+
+class MLPNetworkPickler(models.Model):
+    network = PickledObjectField()
+    pivot_type = models.CharField(max_length = 100, default = None, null = True, blank = True)
+    node_data = PickledObjectField()
+
 
 class NeuralNode(models.Model):
     prime = models.ForeignKey(Hero)
     weight = models.FloatField(default = 0.5)
-
-
-
 
 
 #------- Item Nodes --------

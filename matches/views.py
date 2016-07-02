@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from .utils import get_match_data, get_all_static_data, create_match_obj
+from .utils import get_all_static_data, create_match_obj
 from django.views.generic import TemplateView
-from .models import Match, Player
+from .models import Match
 
 class MatchTest(TemplateView):
     template_name = 'match/match_test.html'
@@ -13,7 +13,6 @@ class MatchTest(TemplateView):
         #get_all_static_data()
         context['match'] = Match.objects.get(match_id = test_match_id)
         get_match_data(context['match'])
-        context ['players'] = Player.objects.filter(match = context['match'])
 
         return context  
 

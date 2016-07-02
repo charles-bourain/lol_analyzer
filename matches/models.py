@@ -19,55 +19,79 @@ from items.models import Item
 
 class Match(models.Model):
     match_id = models.SlugField()
+    blue_champion_1 = models.ForeignKey(Hero, related_name = 'blue_champion_1', null = True, blank = True)
+    blue_items_1 = models.ManyToManyField(Item, related_name = 'blue_items_1', blank = True)
+    blue_champion_2 = models.ForeignKey(Hero, related_name = 'blue_champion_2', null = True, blank = True)
+    blue_items_2 = models.ManyToManyField(Item, related_name = 'blue_items_2', blank = True)
+    blue_champion_3 = models.ForeignKey(Hero, related_name = 'blue_champion_3', null = True, blank = True)
+    blue_items_3 = models.ManyToManyField(Item, related_name = 'blue_items_3', blank = True)
+    blue_champion_4 = models.ForeignKey(Hero, related_name = 'blue_champion_4', null = True, blank = True)
+    blue_items_4 = models.ManyToManyField(Item, related_name = 'blue_items_4', blank = True)
+    blue_champion_5 = models.ForeignKey(Hero, related_name = 'blue_champion_5', null = True, blank = True)
+    blue_items_5 = models.ManyToManyField(Item, related_name = 'blue_items_5', blank = True)
+    red_champion_1 = models.ForeignKey(Hero, related_name = 'red_champion_1', null = True, blank = True)
+    red_items_1 = models.ManyToManyField(Item, related_name = 'red_items_1', blank = True)
+    red_champion_2 = models.ForeignKey(Hero, related_name = 'red_champion_2', null = True, blank = True)
+    red_items_2 = models.ManyToManyField(Item, related_name = 'red_items_2', blank = True)
+    red_champion_3 = models.ForeignKey(Hero, related_name = 'red_champion_3', null = True, blank = True)
+    red_items_3 = models.ManyToManyField(Item, related_name = 'red_items_3', blank = True) 
+    red_champion_4 = models.ForeignKey(Hero, related_name = 'red_champion_4', null = True, blank = True)
+    red_items_4 = models.ManyToManyField(Item, related_name = 'red_items_4', blank = True)
+    red_champion_5 = models.ForeignKey(Hero, related_name = 'red_champion_5', null = True, blank = True)
+    red_items_5 = models.ManyToManyField(Item, related_name = 'red_items_5', blank = True)
+
+    winning_team = models.IntegerField(null = True)
+
+
 
     def __unicode__(self):
             return "Match ID: "+unicode(self.match_id)
 
-class Player(models.Model):  
+# class Player(models.Model):  
 
-    match = models.ForeignKey(Match)
-    champion = models.ForeignKey(Hero)
-    runes = models.ManyToManyField(Rune)
-    rune_rank = models.CharField(max_length = 1000)
-    masteries = models.ManyToManyField(Mastery)
-    mastery_rank = models.CharField(max_length = 1000)
-    item = models.ManyToManyField(Item)
-    winner = models.BooleanField(default = False)
-    json_response = models.CharField(max_length = 10000)
-    spell1 = models.IntegerField(default = 666)
-    spell2 = models.IntegerField(default = 666)
-    team = models.IntegerField()
-    ally_heroes = models.ManyToManyField(Hero, related_name = 'allies')
-    enemy_heroes = models.ManyToManyField(Hero, related_name = 'enemies')
-    ally_players = models.ManyToManyField('self')
-    enemy_players = models.ManyToManyField('self')
+#     match = models.ForeignKey(Match)
+#     champion = models.ForeignKey(Hero)
+#     runes = models.ManyToManyField(Rune)
+#     rune_rank = models.CharField(max_length = 1000)
+#     masteries = models.ManyToManyField(Mastery)
+#     mastery_rank = models.CharField(max_length = 1000)
+#     item = models.ManyToManyField(Item)
+#     winner = models.BooleanField(default = False)
+#     json_response = models.CharField(max_length = 10000)
+#     spell1 = models.IntegerField(default = 666)
+#     spell2 = models.IntegerField(default = 666)
+#     team = models.IntegerField()
+#     ally_heroes = models.ManyToManyField(Hero, related_name = 'allies')
+#     enemy_heroes = models.ManyToManyField(Hero, related_name = 'enemies')
+#     ally_players = models.ManyToManyField('self')
+#     enemy_players = models.ManyToManyField('self')
 
-    totalDamageTaken = models.IntegerField(default = 0)
-    physicalDamageTaken = models.IntegerField(default = 0)
-    magicDamageTaken = models.IntegerField(default = 0)
+#     totalDamageTaken = models.IntegerField(default = 0)
+#     physicalDamageTaken = models.IntegerField(default = 0)
+#     magicDamageTaken = models.IntegerField(default = 0)
 
-    sightWardsBoughtInGame = models.IntegerField(default = 0)
-    visionWardsBoughtInGame = models.IntegerField(default = 0)
-    wardsKilled = models.IntegerField(default = 0)
-    wardsPlaced = models.IntegerField(default = 0)
+#     sightWardsBoughtInGame = models.IntegerField(default = 0)
+#     visionWardsBoughtInGame = models.IntegerField(default = 0)
+#     wardsKilled = models.IntegerField(default = 0)
+#     wardsPlaced = models.IntegerField(default = 0)
     
-    deaths = models.IntegerField(default = 0)
-    assists = models.IntegerField(default = 0)
-    kills = models.IntegerField(default = 0)
+#     deaths = models.IntegerField(default = 0)
+#     assists = models.IntegerField(default = 0)
+#     kills = models.IntegerField(default = 0)
     
-    firstBloodAssist = models.BooleanField(default = False)
+#     firstBloodAssist = models.BooleanField(default = False)
     
-    magicDamageDealtToChampions =  models.IntegerField(default = 0)
-    physicalDamageDealtToChampions = models.IntegerField(default = 0)
-    totalDamageDealtToChampions = models.IntegerField(default = 0)
-    totalTimeCrowdControlDealt = models.IntegerField(default = 0)
+#     magicDamageDealtToChampions =  models.IntegerField(default = 0)
+#     physicalDamageDealtToChampions = models.IntegerField(default = 0)
+#     totalDamageDealtToChampions = models.IntegerField(default = 0)
+#     totalTimeCrowdControlDealt = models.IntegerField(default = 0)
 
-    minionsKilled = models.IntegerField(default = 0)
-    goldEarned = models.IntegerField(default = 0)
+#     minionsKilled = models.IntegerField(default = 0)
+#     goldEarned = models.IntegerField(default = 0)
 
-    totalHeal = models.IntegerField(default = 0)
+#     totalHeal = models.IntegerField(default = 0)
  
-    def __unicode__(self):
-        return unicode(self.match.id) +" "+ unicode(self.champion)
+#     def __unicode__(self):
+#         return unicode(self.match.id) +" "+ unicode(self.champion)
 
 

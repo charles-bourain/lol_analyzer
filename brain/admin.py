@@ -1,5 +1,4 @@
 from django.contrib import admin
-from .models import ItemAllyNode, ItemEnemyNode
+from .models import MLPNetworkPickler
 
-admin.site.register(ItemAllyNode)
-admin.site.register(ItemEnemyNode)
+admin.site.register(MLPNetworkPickler)

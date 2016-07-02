@@ -2,7 +2,7 @@ from django.shortcuts import render
 
 from django.views.generic import TemplateView, FormView
 from .forms import HeroForm
-from matches.models import Player
+from matches.models import Match
 from .manager import NetworkManager
 from django.http import HttpResponse
 

@@ -1,15 +1,48 @@
 from .models import ItemAllyNode, ItemEnemyNode
-from matches.models import Player, Match
+from matches.models import Match
 from pybrain.structure import FeedForwardNetwork, FullConnection, LinearLayer, SigmoidLayer, RecurrentNetwork
 from pybrain.supervised.trainers import BackpropTrainer # trainer = BackpropTrainer(network, dataset)
 from pybrain.datasets.supervised import SupervisedDataSet
-from matches.utils import get_match_data
 import time
 from pprint import pprint
 
 from .manager import PivotNetworkManager, NetworkManager
 
+from heroes.models import Hero
+from items.models import Item
+from .models import MLPNetworkPickler
+from .manager import MLPNetwork
+def proto_network():
 
+    node_list = {}
+
+    champion_list = enumerate(Hero.objects.all())
+
+    for index, champion in champion_list:
+        node_list[champion] = index
+    print node_list 
+    network = MLPNetwork(2, data_index = len(node_list), data_type = None)
+    pickled_network = MLPNetworkPickler.objects.create(network = network, node_data = node_list) #Network Created with 2 Hidden Layers
+
+
+def proto_network2():
+
+    node_list = {}
+
+    champion_list = Hero.objects.all()
+    item_list = Item.objects.all()
+    print item_list
+    start_with_index = 0
+
+    for champion in champion_list:
+        node_list[champion] = {}
+        for index, item in enumerate(item_list, start = start_with_index):
+            node_list[champion][item] = index
+        start_with_index = index + 1
+    print "Last Index = ",start_with_index-1
+    print 'length of node list = ', len(node_list)
+    network = MLPNetwork(2, data_index_size = start_with_index-1, data_type = 'items')
+    pickled_network = MLPNetworkPickler.objects.create(network = network, node_data = node_list)
 
 
 

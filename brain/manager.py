@@ -1,5 +1,5 @@
 from .models import *
-from matches.models import Player, Match
+from matches.models import Match
 from pybrain.structure import FeedForwardNetwork, FullConnection, LinearLayer, SigmoidLayer, RecurrentNetwork, BiasUnit, TanhLayer
 from pybrain.supervised.trainers import BackpropTrainer, RPropMinusTrainer # trainer = BackpropTrainer(network, dataset)
 from pybrain.datasets.supervised import SupervisedDataSet
@@ -327,6 +327,41 @@ class PivotNetworkManager(NetworkManager):
             )
 
 
+class MLPNetwork(object):
+
+    def __init__(self, hidden_layers, data_type, data_index_size):
+
+        self.network = FeedForwardNetwork()
+
+        connect_queue = Queue.Queue()
+        
+        for layer in xrange(0, hidden_layers):
+            connect_queue.put(TanhLayer(data_index_size, name = 'hidden_layer_{}'.format(layer)))
+
+        connect_queue.put(SigmoidLayer(1, name = 'output_layer'))
+
+        prev_layer = LinearLayer(data_index_size, name = 'input_layer')
+        self.network.addInputModule(prev_layer)
+        
+        while not connect_queue.empty():
+            
+            current_layer = connect_queue.get()
+            if current_layer.name == 'output_layer':
+                self.network.addOutputModule(current_layer)
+            else:
+                self.network.addModule(current_layer)
+
+            bias = BiasUnit()
+            bias_connection = FullConnection(bias, current_layer, name = "bias_to_{}_connection".format(current_layer.name))
+            self.network.addModule(bias)
+            self.network.addConnection(bias_connection)
+            
+            connection = FullConnection(prev_layer, current_layer, name = "{}_to_{}_connection".format(prev_layer.name, current_layer.name))
+            self.network.addConnection(connection)
+            
+            prev_layer = current_layer
+
+        self.network.sortModules()
 
 
 """
