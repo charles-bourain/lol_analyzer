@@ -41,8 +41,8 @@ def proto_network2():
         start_with_index = index + 1
     print "Last Index = ",start_with_index-1
     print 'length of node list = ', len(node_list)
-    network = MLPNetwork(2, data_index_size = start_with_index-1, data_type = 'items')
-    pickled_network = MLPNetworkPickler.objects.create(network = network, node_data = node_list)
+    network = MLPNetwork(2, data_index_size = start_with_index-1)
+    pickled_network = MLPNetworkPickler.objects.create(network = network, node_data = node_list, pivot_type = 'items')
 
 
 

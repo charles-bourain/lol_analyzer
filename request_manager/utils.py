@@ -12,6 +12,7 @@ class Request(object):
     last_request_time = datetime.datetime.now()
 def requester(url, request_type):
     print 'REQUEST HIT'
+    time.sleep(1)
     one_sec_time_del = datetime.timedelta(seconds = 1)
     ten_min_time_del = datetime.timedelta(seconds = 10*60)
 

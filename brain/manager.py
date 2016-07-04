@@ -329,7 +329,7 @@ class PivotNetworkManager(NetworkManager):
 
 class MLPNetwork(object):
 
-    def __init__(self, hidden_layers, data_type, data_index_size):
+    def __init__(self, hidden_layers, data_index_size):
 
         self.network = FeedForwardNetwork()
 
@@ -337,6 +337,7 @@ class MLPNetwork(object):
         
         for layer in xrange(0, hidden_layers):
             connect_queue.put(TanhLayer(data_index_size, name = 'hidden_layer_{}'.format(layer)))
+            data_index_size = data_index_size/100
 
         connect_queue.put(SigmoidLayer(1, name = 'output_layer'))
 
@@ -344,7 +345,7 @@ class MLPNetwork(object):
         self.network.addInputModule(prev_layer)
         
         while not connect_queue.empty():
-            
+            print 'layer'
             current_layer = connect_queue.get()
             if current_layer.name == 'output_layer':
                 self.network.addOutputModule(current_layer)
@@ -361,6 +362,7 @@ class MLPNetwork(object):
             
             prev_layer = current_layer
 
+        print 'sorting....'
         self.network.sortModules()
 
 

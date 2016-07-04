@@ -11,6 +11,9 @@ class MLPNetworkPickler(models.Model):
     pivot_type = models.CharField(max_length = 100, default = None, null = True, blank = True)
     node_data = PickledObjectField()
 
+    def __unicode__(self):
+        return unicode(self.pivot_type)
+
 
 class NeuralNode(models.Model):
     prime = models.ForeignKey(Hero)
