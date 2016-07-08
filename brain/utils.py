@@ -12,18 +12,20 @@ from heroes.models import Hero
 from items.models import Item
 from .models import MLPNetworkPickler
 from .manager import MLPNetwork
+from copy import deepcopy, copy
+
 def proto_network():
 
     node_list = {}
-
-    champion_list = enumerate(Hero.objects.all())
-
-    for index, champion in champion_list:
-        node_list[champion] = index
-    print node_list 
-    network = MLPNetwork(2, data_index = len(node_list), data_type = None)
-    pickled_network = MLPNetworkPickler.objects.create(network = network, node_data = node_list) #Network Created with 2 Hidden Layers
-
+    start_with_index = 0
+    for team in ['blue', 'red']:
+        champion_list = enumerate(Hero.objects.all().order_by('-id'), start = start_with_index)
+        node_list[team] = {}
+        for index, champion in champion_list:
+            node_list[team][champion] = index
+        start_with_index = index + 1
+    network = MLPNetwork(1, data_index_size = start_with_index)
+    pickled_network = MLPNetworkPickler.objects.create(network = network.network.params, node_data = node_list) #Network Created with 2 Hidden Layers
 
 def proto_network2():
 
@@ -43,6 +45,128 @@ def proto_network2():
     print 'length of node list = ', len(node_list)
     network = MLPNetwork(2, data_index_size = start_with_index-1)
     pickled_network = MLPNetworkPickler.objects.create(network = network, node_data = node_list, pivot_type = 'items')
+
+
+def network_test():
+    pickled_network = MLPNetworkPickler.objects.get(pivot_type = None)
+    network_params = pickled_network.network.params
+    print len(network_params)
+    
+    #---TESTING---
+    node_list = {}
+    start_with_index = 0
+    for team in ['blue', 'red']:
+        champion_list = enumerate(Hero.objects.all().order_by('-id'), start = start_with_index)
+        node_list[team] = {}
+        for index, champion in champion_list:
+            node_list[team][champion] = index
+        start_with_index = index + 1
+    network = MLPNetwork(1, data_index_size = start_with_index).network
+    print len(network.params)
+    network._setParameters(network_params)
+    #-----TESTING---
+
+
+    highest_index_hero = Hero.objects.all().order_by('id')[0]
+    highest_index = pickled_network.node_data['red'][highest_index_hero]
+
+    training_set = SupervisedDataSet(highest_index+1, 1)
+    all_matches = Match.objects.all()
+    print '-- Building Datasets'
+    print '# of matches = ', len(all_matches)
+    activate_set = []
+    for match in all_matches:
+        print match
+        try:
+            dataset = [0]*(highest_index+1)
+            blue_team_heroes = []
+            red_team_heroes = []
+
+            for i in xrange(1,6):
+                blue_team_heroes.append(getattr(match, 'blue_champion_{}'.format(i)))
+                red_team_heroes.append(getattr(match, 'red_champion_{}'.format(i)))
+
+            for hero in blue_team_heroes:
+                index = pickled_network.node_data['blue'][hero]
+                #dataset[index] = 1
+                dataset = [0]*(highest_index+1)
+
+            for hero in red_team_heroes:
+                index = pickled_network.node_data['red'][hero]
+                #dataset[index] = 1
+                dataset = [1]*(highest_index+1)
+
+            if match.winning_team == 100:
+                output_set = [1]
+            else:
+                output_set = [0]
+
+            for i in xrange(1000):
+                training_set.addSample(dataset, output_set) #Test Line
+            activate_set.append((dataset, output_set)) #Test Line
+        except:
+            print "Error in match: ", match
+    print '-- Training Network'
+    trainer = BackpropTrainer(network, learningrate = 1, verbose = True)
+    trainer.setData(training_set)
+    trainer.trainEpochs(epochs = 1000)
+    for i in activate_set:
+        print 'Predicted = ',network.activate(i[0])
+        print 'Actual = ', i[1]
+    pickled_network.network = network
+    pickled_network.save()
+
+    
+
+
+def small_test():
+
+    node_list = {
+    'A':0,
+    'B':1,
+    'C':2,
+    'D':3,
+    }
+    network = MLPNetwork(2, data_index_size = 4)
+    pickled_network_obj = MLPNetworkPickler.objects.create(network = network, node_data = node_list, pivot_type = 'test') #Network Created with 2 Hidden Layers
+    network = pickled_network_obj.network.network
+
+    print network.activate([1,1,1,1])
+    
+    zeroed_dataset = [0]*len(node_list)
+
+    original_params = network.params
+
+    training_data = [
+    [1,1,1,1],
+    [1,0,1,1],
+    [1,0,0,1],
+    [0,0,0,0],
+    [0,1,0,1],
+    [0,1,0,0],
+    ]
+
+    training_set = SupervisedDataSet(len(zeroed_dataset), 1)
+    trainer = BackpropTrainer(network, learningrate = .01)
+    
+    for tset in training_data[:50]:
+        training_set.addSample(tset, [0])
+    
+    for tset in training_data[51:]:
+        training_set.addSample(tset, [1])
+
+    trainer.trainUntilConvergence(
+        training_set,
+        continueEpochs = 10, 
+        maxEpochs = 50, 
+        convergence_threshold = 1,)
+
+    print network.activate([1,1,1,1])
+    print original_params
+    print network.params
+
+
+
 
 
 

@@ -7,9 +7,9 @@ from picklefield.fields import PickledObjectField
 # Create your models here.
 
 class MLPNetworkPickler(models.Model):
-    network = PickledObjectField()
+    network = PickledObjectField(editable = True)
     pivot_type = models.CharField(max_length = 100, default = None, null = True, blank = True)
-    node_data = PickledObjectField()
+    node_data = PickledObjectField(editable = False)
 
     def __unicode__(self):
         return unicode(self.pivot_type)

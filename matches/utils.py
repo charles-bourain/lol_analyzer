@@ -13,6 +13,49 @@ from heroes.models import Hero
 from timbad.settings import CURRENT_SEASON
 import time
 import Queue
+import csv
+
+
+def matches_to_csv():
+    schema = []
+    node_index = {}
+    start_with_index = 0
+    for team in ['blue', 'red']:
+        champion_list = enumerate(Hero.objects.all().order_by('-id'), start = start_with_index)
+        node_index[team] = {}
+        for index, champion in champion_list:
+            node_index[team][champion] = index
+            schema.append('{}-{}'.format(team,champion))
+        start_with_index = index + 1
+
+    matches = Match.objects.all()
+
+    with open('match_data.csv', 'wb') as csv_file:
+        writer = csv.writer(csv_file, delimiter = ',')
+        writer.writerow([i for i in schema]+['winner'])
+        for match in matches:
+            indexer = [0]*len(schema)
+            try:
+                for i in xrange(1,6):
+                    indexer[node_index['blue'][getattr(match,'blue_champion_{}'.format(i))]] = 1
+                    indexer[node_index['red'][getattr(match,'red_champion_{}'.format(i))]] = 1
+            except:
+                print 'Error in match = ', match
+                continue
+
+            if match.winning_team == 100:
+                indexer.append(1)
+            else:
+                indexer.append(0)
+            for i in xrange(10):
+                writer.writerow(indexer)                 
+
+
+
+
+
+
+    # def match_to_csv(match_obj):
 
 
 
@@ -220,29 +263,33 @@ def update_league(*args):
 
 
     current_version = requests.get('https://global.api.pvp.net/api/lol/static-data/na/v1.2/versions?api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d').json()[0]
-    league_player_list_url = "https://na.api.pvp.net/api/lol/na/v2.5/league/master?type=RANKED_SOLO_5x5&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d"
-
+    league_player_list_master_url = "https://na.api.pvp.net/api/lol/na/v2.5/league/master?type=RANKED_SOLO_5x5&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d"
+    league_player_list_challenger_url = "https://na.api.pvp.net/api/lol/na/v2.5/league/challenger?type=RANKED_SOLO_5x5&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d"
+    league_player_list_requests =[]
     try:
-        league_player_list_request = requests.get(league_player_list_url).json()
+        league_player_list_requests.append(requests.get(league_player_list_challenger_url).json())
+        league_player_list_requests.append(requests.get(league_player_list_master_url).json())
+        
+
     except:
             return "League Player List Request Failed"
-
-    for entry in league_player_list_request['entries']:
-        print "-"*10+"GETTING MATCH DATA FOR PLAYER: %r" %(entry['playerOrTeamName'])+"-"*10
-        player_id = entry['playerOrTeamId']
-        match_list = get_match_list(player_id)
-        for match in match_list:
-            match, created  = Match.objects.get_or_create(match_id = match['matchId'])
-            if created:
-                match.save()
-                print '--- Getting Match Data for {}'.format(match.match_id)
-                version_match, got_data = get_match_data(match)
-                if not version_match:
-                    break
-                if not got_data:
-                    version_match, second_attempt = get_match_data(match)
-                    if second_attempt == False:
-                        print 'Error getting data for Match {}'.format(match.match_id)     
+    for request in league_player_list_requests:
+        for entry in request['entries']:
+            print "-"*10+"GETTING MATCH DATA FOR PLAYER: %r" %(entry['playerOrTeamName'])+"-"*10
+            player_id = entry['playerOrTeamId']
+            match_list = get_match_list(player_id)
+            for match in match_list:
+                match, created  = Match.objects.get_or_create(match_id = match['matchId'])
+                if created:
+                    match.save()
+                    print '--- Getting Match Data for {}'.format(match.match_id)
+                    version_match, got_data = get_match_data(match)
+                    if not version_match:
+                        break
+                    if not got_data:
+                        version_match, second_attempt = get_match_data(match)
+                        if second_attempt == False:
+                            print 'Error getting data for Match {}'.format(match.match_id)     
 
 
 

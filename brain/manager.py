@@ -337,7 +337,6 @@ class MLPNetwork(object):
         
         for layer in xrange(0, hidden_layers):
             connect_queue.put(TanhLayer(data_index_size, name = 'hidden_layer_{}'.format(layer)))
-            data_index_size = data_index_size/100
 
         connect_queue.put(SigmoidLayer(1, name = 'output_layer'))
 

@@ -40,7 +40,7 @@ class Match(models.Model):
     red_champion_5 = models.ForeignKey(Hero, related_name = 'red_champion_5', null = True, blank = True)
     red_items_5 = models.ManyToManyField(Item, related_name = 'red_items_5', blank = True)
 
-    winning_team = models.IntegerField(null = True)
+    winning_team = models.IntegerField(null = True) # 100 is Blue Team Winner
 
 
 
