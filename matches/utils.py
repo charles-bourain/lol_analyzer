@@ -15,6 +15,8 @@ import time
 import Queue
 import csv
 
+VERSION_TREE = ['6.13', '6.12', '6.11']
+
 
 def matches_to_csv():
     schema = []
@@ -97,7 +99,7 @@ def update_league(*args):
             pass
 
         try:
-            if not str(match_data['matchVersion']).startswith(str(current_version)):
+            if not str(match_data['matchVersion']).startswith(str(VERSION_TREE[0])) or not str(match_data['matchVersion']).startswith(str(VERSION_TREE[1])) or not str(match_data['matchVersion']).startswith(str(VERSION_TREE[2])):
                 print 'Current Version = %s :: Match Version = %s'% (current_version, match_data['matchVersion'] )
                 print 'Not Current Version, Skipping'
                 match_obj.delete()
@@ -262,7 +264,6 @@ def update_league(*args):
     #         return False, True
 
 
-    current_version = requests.get('https://global.api.pvp.net/api/lol/static-data/na/v1.2/versions?api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d').json()[0]
     league_player_list_master_url = "https://na.api.pvp.net/api/lol/na/v2.5/league/master?type=RANKED_SOLO_5x5&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d"
     league_player_list_challenger_url = "https://na.api.pvp.net/api/lol/na/v2.5/league/challenger?type=RANKED_SOLO_5x5&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d"
     league_player_list_requests =[]
