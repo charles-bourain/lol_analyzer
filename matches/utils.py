@@ -124,8 +124,11 @@ def update_league(*args):
             setattr(match_obj, match_player['champion'], Hero.objects.get(riot_id = player['championId']))
             for stat in player['stats']:
                 if 'item' in stat and player['stats'][stat] != 0:
-                    item = Item.objects.get(riot_id = player['stats'][stat])
-                    match_player['items'].add(item)
+                    try:
+                        item = Item.objects.get(riot_id = player['stats'][stat])
+                        match_player['items'].add(item)
+                    except:
+                        print player['stats'][stat], ' No Longer exists in LoL'
 
         for team in match_data['teams']:
             if team['winner']:
