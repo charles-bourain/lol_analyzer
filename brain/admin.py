@@ -1,4 +1,4 @@
 from django.contrib import admin
-from .models import MLPNetworkPickler
+from .models import DataPickler
 
-admin.site.register(MLPNetworkPickler)
+admin.site.register(DataPickler)

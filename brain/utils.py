@@ -1,4 +1,3 @@
-from .models import ItemAllyNode, ItemEnemyNode
 from matches.models import Match
 from pybrain.structure import FeedForwardNetwork, FullConnection, LinearLayer, SigmoidLayer, RecurrentNetwork
 from pybrain.supervised.trainers import BackpropTrainer # trainer = BackpropTrainer(network, dataset)
@@ -10,226 +9,219 @@ from .manager import PivotNetworkManager, NetworkManager
 
 from heroes.models import Hero
 from items.models import Item
-from .models import MLPNetworkPickler
+from .models import DataPickler
 from .manager import MLPNetwork
 from copy import deepcopy, copy
 
-def proto_network():
+def proto_data():
 
     node_list = {}
-    start_with_index = 0
-    for team in ['blue', 'red']:
-        champion_list = enumerate(Hero.objects.all().order_by('-id'), start = start_with_index)
-        node_list[team] = {}
-        for index, champion in champion_list:
-            node_list[team][champion] = index
-        start_with_index = index + 1
-    network = MLPNetwork(1, data_index_size = start_with_index)
-    pickled_network = MLPNetworkPickler.objects.create(network = network.network.params, node_data = node_list) #Network Created with 2 Hidden Layers
-
-def proto_network2():
-
-    node_list = {}
-
     champion_list = Hero.objects.all()
-    item_list = Item.objects.all()
-    print item_list
-    start_with_index = 0
-
-    for champion in champion_list:
-        node_list[champion] = {}
-        for index, item in enumerate(item_list, start = start_with_index):
-            node_list[champion][item] = index
-        start_with_index = index + 1
-    print "Last Index = ",start_with_index-1
-    print 'length of node list = ', len(node_list)
-    network = MLPNetwork(2, data_index_size = start_with_index-1)
-    pickled_network = MLPNetworkPickler.objects.create(network = network, node_data = node_list, pivot_type = 'items')
-
-
-def network_test():
-    pickled_network = MLPNetworkPickler.objects.get(pivot_type = None)
-    network_params = pickled_network.network.params
-    print len(network_params)
-    
-    #---TESTING---
-    node_list = {}
-    start_with_index = 0
     for team in ['blue', 'red']:
-        champion_list = enumerate(Hero.objects.all().order_by('-id'), start = start_with_index)
-        node_list[team] = {}
-        for index, champion in champion_list:
-            node_list[team][champion] = index
-        start_with_index = index + 1
-    network = MLPNetwork(1, data_index_size = start_with_index).network
-    print len(network.params)
-    network._setParameters(network_params)
-    #-----TESTING---
+        for champion in champion_list:
+            node_list['{}-{}'.format(team, champion.name.replace("'",""))] = str(0)
+    data_pickler = DataPickler.objects.create(data = node_list)
+    print data_pickler.data
 
 
-    highest_index_hero = Hero.objects.all().order_by('id')[0]
-    highest_index = pickled_network.node_data['red'][highest_index_hero]
+# def proto_network2():
 
-    training_set = SupervisedDataSet(highest_index+1, 1)
-    all_matches = Match.objects.all()
-    print '-- Building Datasets'
-    print '# of matches = ', len(all_matches)
-    activate_set = []
-    for match in all_matches:
-        print match
-        try:
-            dataset = [0]*(highest_index+1)
-            blue_team_heroes = []
-            red_team_heroes = []
+#     node_list = {}
 
-            for i in xrange(1,6):
-                blue_team_heroes.append(getattr(match, 'blue_champion_{}'.format(i)))
-                red_team_heroes.append(getattr(match, 'red_champion_{}'.format(i)))
+#     champion_list = Hero.objects.all()
+#     item_list = Item.objects.all()
+#     print item_list
+#     start_with_index = 0
 
-            for hero in blue_team_heroes:
-                index = pickled_network.node_data['blue'][hero]
-                #dataset[index] = 1
-                dataset = [0]*(highest_index+1)
+#     for champion in champion_list:
+#         node_list[champion] = {}
+#         for index, item in enumerate(item_list, start = start_with_index):
+#             node_list[champion][item] = index
+#         start_with_index = index + 1
+#     print "Last Index = ",start_with_index-1
+#     print 'length of node list = ', len(node_list)
+#     network = MLPNetwork(2, data_index_size = start_with_index-1)
+#     pickled_network = MLPNetworkPickler.objects.create(network = network, node_data = node_list, pivot_type = 'items')
 
-            for hero in red_team_heroes:
-                index = pickled_network.node_data['red'][hero]
-                #dataset[index] = 1
-                dataset = [1]*(highest_index+1)
 
-            if match.winning_team == 100:
-                output_set = [1]
-            else:
-                output_set = [0]
+# def network_test():
+#     pickled_network = MLPNetworkPickler.objects.get(pivot_type = None)
+#     network_params = pickled_network.network.params
+#     print len(network_params)
+    
+#     #---TESTING---
+#     node_list = {}
+#     start_with_index = 0
+#     for team in ['blue', 'red']:
+#         champion_list = enumerate(Hero.objects.all().order_by('-id'), start = start_with_index)
+#         node_list[team] = {}
+#         for index, champion in champion_list:
+#             node_list[team][champion] = index
+#         start_with_index = index + 1
+#     network = MLPNetwork(1, data_index_size = start_with_index).network
+#     print len(network.params)
+#     network._setParameters(network_params)
+#     #-----TESTING---
 
-            for i in xrange(1000):
-                training_set.addSample(dataset, output_set) #Test Line
-            activate_set.append((dataset, output_set)) #Test Line
-        except:
-            print "Error in match: ", match
-    print '-- Training Network'
-    trainer = BackpropTrainer(network, learningrate = 1, verbose = True)
-    trainer.setData(training_set)
-    trainer.trainEpochs(epochs = 1000)
-    for i in activate_set:
-        print 'Predicted = ',network.activate(i[0])
-        print 'Actual = ', i[1]
-    pickled_network.network = network
-    pickled_network.save()
+
+#     highest_index_hero = Hero.objects.all().order_by('id')[0]
+#     highest_index = pickled_network.node_data['red'][highest_index_hero]
+
+#     training_set = SupervisedDataSet(highest_index+1, 1)
+#     all_matches = Match.objects.all()
+#     print '-- Building Datasets'
+#     print '# of matches = ', len(all_matches)
+#     activate_set = []
+#     for match in all_matches:
+#         print match
+#         try:
+#             dataset = [0]*(highest_index+1)
+#             blue_team_heroes = []
+#             red_team_heroes = []
+
+#             for i in xrange(1,6):
+#                 blue_team_heroes.append(getattr(match, 'blue_champion_{}'.format(i)))
+#                 red_team_heroes.append(getattr(match, 'red_champion_{}'.format(i)))
+
+#             for hero in blue_team_heroes:
+#                 index = pickled_network.node_data['blue'][hero]
+#                 #dataset[index] = 1
+#                 dataset = [0]*(highest_index+1)
+
+#             for hero in red_team_heroes:
+#                 index = pickled_network.node_data['red'][hero]
+#                 #dataset[index] = 1
+#                 dataset = [1]*(highest_index+1)
+
+#             if match.winning_team == 100:
+#                 output_set = [1]
+#             else:
+#                 output_set = [0]
+
+#             for i in xrange(1000):
+#                 training_set.addSample(dataset, output_set) #Test Line
+#             activate_set.append((dataset, output_set)) #Test Line
+#         except:
+#             print "Error in match: ", match
+#     print '-- Training Network'
+#     trainer = BackpropTrainer(network, learningrate = 1, verbose = True)
+#     trainer.setData(training_set)
+#     trainer.trainEpochs(epochs = 1000)
+#     for i in activate_set:
+#         print 'Predicted = ',network.activate(i[0])
+#         print 'Actual = ', i[1]
+#     pickled_network.network = network
+#     pickled_network.save()
 
     
 
 
-def small_test():
+# def small_test():
 
-    node_list = {
-    'A':0,
-    'B':1,
-    'C':2,
-    'D':3,
-    }
-    network = MLPNetwork(2, data_index_size = 4)
-    pickled_network_obj = MLPNetworkPickler.objects.create(network = network, node_data = node_list, pivot_type = 'test') #Network Created with 2 Hidden Layers
-    network = pickled_network_obj.network.network
+#     node_list = {
+#     'A':0,
+#     'B':1,
+#     'C':2,
+#     'D':3,
+#     }
+#     network = MLPNetwork(2, data_index_size = 4)
+#     pickled_network_obj = MLPNetworkPickler.objects.create(network = network, node_data = node_list, pivot_type = 'test') #Network Created with 2 Hidden Layers
+#     network = pickled_network_obj.network.network
 
-    print network.activate([1,1,1,1])
+#     print network.activate([1,1,1,1])
     
-    zeroed_dataset = [0]*len(node_list)
+#     zeroed_dataset = [0]*len(node_list)
 
-    original_params = network.params
+#     original_params = network.params
 
-    training_data = [
-    [1,1,1,1],
-    [1,0,1,1],
-    [1,0,0,1],
-    [0,0,0,0],
-    [0,1,0,1],
-    [0,1,0,0],
-    ]
+#     training_data = [
+#     [1,1,1,1],
+#     [1,0,1,1],
+#     [1,0,0,1],
+#     [0,0,0,0],
+#     [0,1,0,1],
+#     [0,1,0,0],
+#     ]
 
-    training_set = SupervisedDataSet(len(zeroed_dataset), 1)
-    trainer = BackpropTrainer(network, learningrate = .01)
+#     training_set = SupervisedDataSet(len(zeroed_dataset), 1)
+#     trainer = BackpropTrainer(network, learningrate = .01)
     
-    for tset in training_data[:50]:
-        training_set.addSample(tset, [0])
+#     for tset in training_data[:50]:
+#         training_set.addSample(tset, [0])
     
-    for tset in training_data[51:]:
-        training_set.addSample(tset, [1])
+#     for tset in training_data[51:]:
+#         training_set.addSample(tset, [1])
 
-    trainer.trainUntilConvergence(
-        training_set,
-        continueEpochs = 10, 
-        maxEpochs = 50, 
-        convergence_threshold = 1,)
+#     trainer.trainUntilConvergence(
+#         training_set,
+#         continueEpochs = 10, 
+#         maxEpochs = 50, 
+#         convergence_threshold = 1,)
 
-    print network.activate([1,1,1,1])
-    print original_params
-    print network.params
+#     print network.activate([1,1,1,1])
+#     print original_params
+#     print network.params
 
+# def test(match_id):
+#     player = Player.objects.filter(match = match_id)[1]
+#     MLP_NN = MLPTrainerManager(player)
+#     return MLP_NN.run_network()
 
+# def test_pivot_network():
 
+#     match = Match.objects.get(id = 297986)
+#     players = Player.objects.filter(match = match)
+#     prime_player = players[0]
+#     ally_team_queryset = prime_player.ally_heroes.all()
+#     enemy_team_queryset = prime_player.enemy_heroes.all()
+#     ally_team = map(lambda x:x, ally_team_queryset)
+#     enemy_team = map(lambda x:x, enemy_team_queryset)
 
+#     ally_team.append(prime_player.champion)
 
+#     data = {}
+#     data['type'] = 'item'
+#     data['data'] = {}
 
-def test(match_id):
-    player = Player.objects.filter(match = match_id)[1]
-    MLP_NN = MLPTrainerManager(player)
-    return MLP_NN.run_network()
+#     for player in players:
+#         data['data'][player.champion] = player.item.all()
 
-def test_pivot_network():
+#     print '--- Non-Pivot Network ---'
+#     champ_network = NetworkManager(1, ally_team, enemy_team)
+#     champ_network.train_network()
+#     print 'Prediction = ', champ_network.run_network()
+#     # print '--- Creating Network ---'
+#     # network = PivotNetworkManager(1, ally_team, enemy_team, data)
 
-    match = Match.objects.get(id = 297986)
-    players = Player.objects.filter(match = match)
-    prime_player = players[0]
-    ally_team_queryset = prime_player.ally_heroes.all()
-    enemy_team_queryset = prime_player.enemy_heroes.all()
-    ally_team = map(lambda x:x, ally_team_queryset)
-    enemy_team = map(lambda x:x, enemy_team_queryset)
+#     # print '--- Training Network ---'
+#     # network.train_network()
 
-    ally_team.append(prime_player.champion)
+#     # print '--- Running Network ---'
+#     # print 'Prediction = ', network.run_network()
+#     # print 'Actual Winner = ', prime_player.winner
 
-    data = {}
-    data['type'] = 'item'
-    data['data'] = {}
+# def mass_test():
 
-    for player in players:
-        data['data'][player.champion] = player.item.all()
-
-    print '--- Non-Pivot Network ---'
-    champ_network = NetworkManager(1, ally_team, enemy_team)
-    champ_network.train_network()
-    print 'Prediction = ', champ_network.run_network()
-    # print '--- Creating Network ---'
-    # network = PivotNetworkManager(1, ally_team, enemy_team, data)
-
-    # print '--- Training Network ---'
-    # network.train_network()
-
-    # print '--- Running Network ---'
-    # print 'Prediction = ', network.run_network()
-    # print 'Actual Winner = ', prime_player.winner
-
-def mass_test():
-
-    error_list = []
-    total = 0
-    wrong = 0
-    player_obj_list = Player.objects.all()
-    for player in player_obj_list:
-        MLP_NN = ChampionMLPTrainerManager(player)
-        NN_prediction, win_rate = MLP_NN.run_network()
-        if NN_prediction > 0.5:
-            win = True
-        else:
-            win = False
+#     error_list = []
+#     total = 0
+#     wrong = 0
+#     player_obj_list = Player.objects.all()
+#     for player in player_obj_list:
+#         MLP_NN = ChampionMLPTrainerManager(player)
+#         NN_prediction, win_rate = MLP_NN.run_network()
+#         if NN_prediction > 0.5:
+#             win = True
+#         else:
+#             win = False
 
 
-        total+=1
-        print 'NN Prediction: %s -- Win Rate: %s' % (NN_prediction, win_rate)
-        if player.winner != win:
-            error_list.append((player, NN_prediction, win_rate))
-            wrong+=1
-        print "Percent Correct = ",((float(total)-float(wrong))/total)*100
-    return error_list
+#         total+=1
+#         print 'NN Prediction: %s -- Win Rate: %s' % (NN_prediction, win_rate)
+#         if player.winner != win:
+#             error_list.append((player, NN_prediction, win_rate))
+#             wrong+=1
+#         print "Percent Correct = ",((float(total)-float(wrong))/total)*100
+#     return error_list
 
 
 

@@ -23,16 +23,18 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('TIMBAD_SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
 RIOT_API_KEY = os.environ.get('RIOT_API_KEY')
 RIOT_REQUEST_BASE = {
 'NA':"https://na.api.pvp.net/",
 }
 CURRENT_SEASON = 'SEASON2016'
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
+ALLOWED_HOSTS = []
+
+
 
 
 # Application definition

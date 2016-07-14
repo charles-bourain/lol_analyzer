@@ -5,7 +5,7 @@ import views
 
 
 urlpatterns=patterns('',
-    url(r'', views.BrainView.as_view(), name='brain'),
+    url(r'', views.BrainView.as_view(), name='brain_view'),
 #    url(r'^results/$', views.HeroDetail.as_view(), name='results'),      
     )
 

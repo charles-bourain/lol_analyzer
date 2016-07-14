@@ -49,8 +49,7 @@ def matches_to_csv():
                 indexer.append(1)
             else:
                 indexer.append(0)
-            for i in xrange(10):
-                writer.writerow(indexer)                 
+            writer.writerow(indexer)                 
 
 
 
@@ -83,6 +82,8 @@ def create_match_obj(match_id):
 
 def update_league(*args):
 
+    match_request_queue = Queue.Queue()    
+
     def get_match_data(match_obj):
         match_id = match_obj.match_id        
 
@@ -104,6 +105,10 @@ def update_league(*args):
                 print 'Not Current Version, Skipping'
                 match_obj.delete()
                 return False, False
+            elif match_data['queueType'] in ['RANKED_SOLO_5x5',  'RANKED_PREMADE_5x5', 'RANKED_TEAM_5x5', 'TEAM_BUILDER_DRAFT_RANKED_5x5']:
+                print 'MATCH NOT RANKED'
+                match_obj.delete()
+                return False, False
         except:
             pass
 
@@ -121,6 +126,16 @@ def update_league(*args):
             else:
                 match_player = red_queue.get()
 
+            if player['highestAchievedSeasonTier'] in ['DIAMOND']:
+                participant_id = player['participantId']
+
+                for identity in match_data['participantIdentities']:
+                    if identity['participantId'] == participant_id:
+                        match_list = get_match_list(identity['player']['summonerId'])
+                        for match in match_list:
+                            print 'Match Added to Queue'
+                            match_request_queue.put(match['matchId'])
+                
             setattr(match_obj, match_player['champion'], Hero.objects.get(riot_id = player['championId']))
             for stat in player['stats']:
                 if 'item' in stat and player['stats'][stat] != 0:
@@ -140,160 +155,42 @@ def update_league(*args):
         return True, True
 
 
-
-
-
-
-    # def get_match_data(match_obj):
-
-    #     match_id = match_obj.match_id        
-
-    #     match_data_url = 'https://na.api.pvp.net/api/lol/na/v2.2/match/%s?api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d' % match_id
-
-    #     match_data = requester(match_data_url, 'get')
-
-
-    #     try:
-    #         status_code = match_data['status']['status_code']
-    #         status_message = match_data['status']['message']
-    #         print 'REQUEST ERROR: %s -- %s' %(status_code, status_message)
-    #         return False, True
-    #     except:
-    #         pass
-
-    #     try:
-    #         if not str(match_data['matchVersion']).startswith(str(current_version)):
-    #             print 'Current Version = %s :: Match Version = %s'% (current_version, match_data['matchVersion'] )
-    #             print 'Not Current Version, Skipping'
-    #             match_obj.delete()
-    #             return False, False
-    #         for team in match_data['teams']:
-    #             if team['winner'] == True:
-    #                     winning_team = team['teamId']
-
-    #         wteam = []
-    #         lteam = []
-    #         for player in match_data['participants']:
-
-
-    #             (player_obj, created) = Player.objects.get_or_create(
-    #                 match = match_obj, 
-    #                 json_response = player,
-    #                 champion = Hero.objects.get(riot_id = player['championId']),
-    #                 spell1 = player['spell1Id'],
-    #                 spell2 = player['spell2Id'],
-    #                 totalDamageTaken = player['stats']['totalDamageTaken'],
-    #                 physicalDamageTaken = player['stats']['physicalDamageTaken'],
-    #                 magicDamageTaken = player['stats']['magicDamageTaken'],
-    #                 sightWardsBoughtInGame = player['stats']['sightWardsBoughtInGame'],
-    #                 visionWardsBoughtInGame = player['stats']['visionWardsBoughtInGame'],
-    #                 wardsKilled = player['stats']['wardsKilled'],
-    #                 wardsPlaced = player['stats']['wardsPlaced'],
-    #                 deaths = player['stats']['deaths'],
-    #                 assists = player['stats']['assists'],
-    #                 kills = player['stats']['kills'],
-    #                 firstBloodAssist = player['stats']['firstBloodAssist'],
-    #                 magicDamageDealtToChampions = player['stats']['magicDamageDealtToChampions'],
-    #                 physicalDamageDealtToChampions = player['stats']['physicalDamageDealtToChampions'],
-    #                 totalDamageDealtToChampions = player['stats']['totalDamageDealtToChampions'],
-    #                 totalTimeCrowdControlDealt = player['stats']['totalTimeCrowdControlDealt'],
-    #                 minionsKilled = player['stats']['minionsKilled'],
-    #                 goldEarned = player['stats']['goldEarned'],
-    #                 totalHeal = player['stats']['totalHeal'],
-    #                 team = player['teamId'],       
-    #                 )
-
-    #             mastery_rank = {}
-    #             for mastery in player['masteries']:
-    #                 mastery_obj = Mastery.objects.get(masteryId = mastery['masteryId'])
-    #                 #player_mastery, created = PlayerMastery.objects.get_or_create(rank = mastery['rank'], mastery = mastery_obj)
-    #                 player_obj.masteries.add(mastery_obj)
-    #                 mastery_rank[mastery_obj.masteryId] = mastery['rank']
-
-    #             player_obj.mastery_rank = str(mastery_rank)
-
-    #             rune_rank = {}
-    #             for rune in player['runes']:
-    #                 rune_obj = Rune.objects.get(runeId = rune['runeId'])
-    #                 #player_rune, created = PlayerRune.objects.get_or_create(rank = rune['rank'], rune = rune_obj)
-    #                 rune_rank[rune_obj.runeId] = rune['rank']
-    #                 player_obj.runes.add(rune_obj)
-
-    #             player_obj.rune_rank = str(rune_rank)
-
-
-    #             for stat in player['stats']:
-    #                 if 'item' in stat and player['stats'][stat] != 0:
-    #                     try:
-    #                         player_obj.item.add(Item.objects.get(riot_id = player['stats'][stat]))
-    #                     except:
-    #                         print 'Riot Item ID Failed to add: ',player['stats'][stat]
-
-                
-    #             if player_obj.team == winning_team:
-    #                 player_obj.winner = True
-    #                 wteam.append(player_obj)
-    #             else:
-    #                 player_obj.winner = False
-    #                 lteam.append(player_obj)
-    #             player_obj.save()
-
-
-    #         for team in [wteam, lteam]:
-
-    #             if team == wteam:
-    #                 ally_team = wteam
-    #                 enemy_team = lteam
-    #             else:
-    #                 ally_team = lteam
-    #                 enemy_team = wteam
-
-    #             for player in team:
-    #                 for j in ally_team:
-
-    #                     if player != j:
-    #                             player.ally_heroes.add(j.champion)
-    #                             player.ally_players.add(j)
-    #                 for j in enemy_team:
-
-    #                     player.enemy_heroes.add(j.champion)
-    #                     player.enemy_players.add(j)
-
-    #                 player.save()
-
-    #         return True, True
-    #     except:
-    #         print 'Error Occured in Match Data for MATCH: ',match_id 
-    #         return False, True
-
-
     league_player_list_master_url = "https://na.api.pvp.net/api/lol/na/v2.5/league/master?type=RANKED_SOLO_5x5&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d"
     league_player_list_challenger_url = "https://na.api.pvp.net/api/lol/na/v2.5/league/challenger?type=RANKED_SOLO_5x5&api_key=07f7018c-7a66-4566-8fce-bc6f9c94b13d"
     league_player_list_requests =[]
+
+
+
     try:
         league_player_list_requests.append(requests.get(league_player_list_challenger_url).json())
         league_player_list_requests.append(requests.get(league_player_list_master_url).json())
-        
-
     except:
             return "League Player List Request Failed"
+
+
+    #Creates Root(s) for all master/challenger leagues
     for request in league_player_list_requests:
         for entry in request['entries']:
             print "-"*10+"GETTING MATCH DATA FOR PLAYER: %r" %(entry['playerOrTeamName'])+"-"*10
             player_id = entry['playerOrTeamId']
             match_list = get_match_list(player_id)
             for match in match_list:
-                match, created  = Match.objects.get_or_create(match_id = match['matchId'])
-                if created:
-                    match.save()
-                    print '--- Getting Match Data for {}'.format(match.match_id)
-                    version_match, got_data = get_match_data(match)
-                    if not version_match:
-                        break
-                    if not got_data:
-                        version_match, second_attempt = get_match_data(match)
-                        if second_attempt == False:
-                            print 'Error getting data for Match {}'.format(match.match_id)     
+                match_request_queue.put(match['matchId'])
+
+    while not match_request_queue.empty():
+        match_id = match_request_queue.get()
+        match, created  = Match.objects.get_or_create(match_id = match_id)
+        if created:
+            match.save()
+        print '--- Getting Match Data for {}'.format(match.match_id)
+        version_match, got_data = get_match_data(match)
+        if not version_match:
+            continue
+        if not got_data:
+            version_match, second_attempt = get_match_data(match)
+            if second_attempt == False:
+                print 'Error getting data for Match {}'.format(match.match_id)   
+
 
 
 

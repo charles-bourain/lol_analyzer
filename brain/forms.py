@@ -2,6 +2,7 @@ from django import forms
 from heroes.models import Hero
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
+from django.core.urlresolvers import reverse
 
 class HeroForm(forms.Form):
 
@@ -10,17 +11,19 @@ class HeroForm(forms.Form):
 
         self.helper = FormHelper()
         self.helper.form_method = 'post'
-        self.helper.add_input(Submit('submit', 'Submit'))
+        self.helper.form_id = 'match_form'
+        self.helper.add_input(Submit('match-submit', 'Submit'))
+        self.helper.form_action = reverse('brain_view')
     
     queryset = Hero.objects.all().order_by('name')
     
-    ally_1 = forms.ModelChoiceField(queryset = queryset,)
-    ally_2 = forms.ModelChoiceField(queryset = queryset,)
-    ally_3 = forms.ModelChoiceField(queryset = queryset, )
-    ally_4 = forms.ModelChoiceField(queryset = queryset, )
-    ally_5 = forms.ModelChoiceField(queryset = queryset, )
-    enemy_1 = forms.ModelChoiceField(queryset = queryset, )
-    enemy_2 = forms.ModelChoiceField(queryset = queryset,)
-    enemy_3 = forms.ModelChoiceField(queryset = queryset, )
-    enemy_4 = forms.ModelChoiceField(queryset = queryset, )
-    enemy_5 = forms.ModelChoiceField(queryset = queryset, )
+    blue_1 = forms.ModelChoiceField(queryset = queryset,)
+    blue_2 = forms.ModelChoiceField(queryset = queryset,)
+    blue_3 = forms.ModelChoiceField(queryset = queryset, )
+    blue_4 = forms.ModelChoiceField(queryset = queryset, )
+    blue_5 = forms.ModelChoiceField(queryset = queryset, )
+    red_1 = forms.ModelChoiceField(queryset = queryset, )
+    red_2 = forms.ModelChoiceField(queryset = queryset,)
+    red_3 = forms.ModelChoiceField(queryset = queryset, )
+    red_4 = forms.ModelChoiceField(queryset = queryset, )
+    red_5 = forms.ModelChoiceField(queryset = queryset, )

@@ -5,6 +5,9 @@ from .forms import HeroForm
 from matches.models import Match
 from .manager import NetworkManager
 from django.http import HttpResponse
+import boto3
+from pprint import pprint
+from brain.utils import DataPickler
 
 
 class BrainView(FormView):
@@ -13,22 +16,27 @@ class BrainView(FormView):
     success_url = ''
 
     def form_valid(self, form):
-            ally_list = []
-            enemy_list = []
+        data_pickle_obj = DataPickler.objects.all()[0]
+        client = boto3.client('machinelearning', 'us-east-1')
 
-            for i in form.cleaned_data:
-                if i.startswith('ally'):
-                    ally_list.append(form.cleaned_data[i])
-                else:
-                    enemy_list.append(form.cleaned_data[i])
+        record_dict = data_pickle_obj.data
 
-            NN_network = NetworkManager(hidden_layers = 2, ally_champ_obj_list = ally_list, enemy_champ_obj_list = enemy_list)
-            raw_win_rate = NN_network.train_network()
-            NN_prediction = NN_network.run_network()
+        for i in form.cleaned_data:
+            if i.startswith('blue'):
+                key = 'blue-{}'.format(form.cleaned_data[i].name.replace("'",''))
+                record_dict[key] = str(1)
+            else:
+                key = 'red-{}'.format(form.cleaned_data[i].name.replace("'",''))
+                record_dict[key] = str(1)
+        response = client.predict(
+            MLModelId = 'ml-3j1aVuk32Ic',
+            Record = record_dict,
+            PredictEndpoint = 'https://realtime.machinelearning.us-east-1.amazonaws.com'
+            )
+        return HttpResponse(response['Prediction']['predictedValue'])
 
-            print NN_prediction
-
-            return HttpResponse("Raw Win Rate = {}  :  Prediction = {}".format(raw_win_rate, NN_prediction))
+    def form_invalid(self, form):
+        return HttpResponse("Pick Teams plz")
 
 
 

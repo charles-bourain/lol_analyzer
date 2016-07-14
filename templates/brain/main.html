@@ -1,4 +1,43 @@
 {% load crispy_forms_tags %}
 
+{% block extra_head %}
+    <!-- jQuery -->
+    <script src='http://code.jquery.com/jquery-latest.js'></script>
+
+{% endblock %}
 
 {% crispy form %}
+
+{% block body %}
+
+<p id='response'>
+</p>
+
+{% endblock %}
+
+<script>
+    $(document).ready(function() {
+
+        $('#match_form').on('submit', function(event) {
+            formdata = new FormData($(this).get(0));
+            event.preventDefault();
+            $.ajax({
+                url: $(this).attr('action'),
+                type: $(this).attr('method'),
+                data: formdata,
+                processData: false,
+                contentType: false,
+
+                success: function(response) {
+                    $('#response').html("<h2>"+"Chance of Blue Team Winning: "+response+"</h2>");
+                },
+                error: function(response) {
+                    $('#response').html("<h2>NOPE</h2>")
+                },
+
+            })
+
+        });
+        
+    }); 
+</script>
