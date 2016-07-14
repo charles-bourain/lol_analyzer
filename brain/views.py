@@ -33,7 +33,7 @@ class BrainView(FormView):
             Record = record_dict,
             PredictEndpoint = 'https://realtime.machinelearning.us-east-1.amazonaws.com'
             )
-        return HttpResponse("Chance of Blue Team Winning: "+response['Prediction']['predictedValue'])
+        return HttpResponse("Chance of Blue Team Winning: "+str(response['Prediction']['predictedValue']))
 
     def form_invalid(self, form):
         return HttpResponse("Pick Teams plz")
