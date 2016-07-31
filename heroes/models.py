@@ -5,6 +5,7 @@ from django.db import models
 class Hero(models.Model):
     name = models.CharField(max_length = 20)
     riot_id = models.IntegerField(default = 1)
+    image_name = models.CharField(null = True, blank = True, max_length = 20)
     # tag = models.CharField(max_length = 20)
     attackrange = models.FloatField(default = 1)
     mpperlevel = models.FloatField(default = 1)
@@ -29,10 +30,3 @@ class Hero(models.Model):
       
     def __unicode__(self):
         return unicode(self.name)
-
-class HeroTag(models.Model):
-    hero = models.ForeignKey(Hero)
-    tag = models.CharField(max_length = 20)
-
-    def __unicode__(self):
-        return unicode(self.tag)

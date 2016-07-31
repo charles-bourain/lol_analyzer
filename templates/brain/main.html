@@ -1,38 +1,156 @@
 {% load crispy_forms_tags %}
 
 {% block extra_head %}
+{% load static %}
     <!-- jQuery -->
     <script src='http://code.jquery.com/jquery-latest.js'></script>
 
+    <!-- Boostrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">    
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous">
+    </script>
+
+    <!-- jQueryUI -->
+    <script src="{% static 'jquery-ui-1.12.0/jquery-ui.min.js' %}"></script>
+    
+
+<style>
+#overlay {
+    position:fixed;
+    height:100%;
+}
+.hero-select {
+    width: 120px; 
+    height: 120px; 
+    float:left;
+}
+
+.hero-image {
+    border:2px solid black;
+}
+.ui-selected {
+    border-color:yellow;
+}
+
+.chosen-hero {
+    opacity:0.3;
+  -webkit-user-select: none;  /* Chrome all / Safari all */
+  -moz-user-select: none;     /* Firefox all */
+  -ms-user-select: none;      /* IE 10+ */    
+}
+
+
+body {padding-top:80px; background-color:black;}
+</style>
+
+<nav class='navbar navbar-default navbar-fixed-top'>
+    <div class='progress'>
+        <div id='response' class='progress-bar' role='progressbar' aria-valuenow='60' aria-valuemin='0' aria-valuemax='100' style='width:60%;'>
+            60%
+        </div>
+    </div>
+    <div class='form-action center'>
+        <input type='submit' name='match-submit' value='Submit' class='btn btn-primary' id='submit-id-match-submit' form='match-form'>
+    </div>
+</nav>
+
+
 {% endblock %}
 
-{% crispy form %}
-
 {% block body %}
+{% csrf_token %}
+<div id='overlay' class='col-lg-12 col-md-12 col-sm-12'>
+    <div id='blue-team-container' class='col-lg-1 col-md-1 col-sm-2 selected-hero-container' style='background-color:blue;'>
 
-<p id='response'>
-</p>
+        <img class='hero-select' src='' id='blue-1' style='background-color:black; float:right'>
+        <img class='hero-select' src='' id='blue-2' style='background-color:black; float:right'>
+        <img class='hero-select' src='' id='blue-3' style='background-color:black; float:right'>
+        <img class='hero-select' src='' id='blue-4' style='background-color:black; float:right'>
+        <img class='hero-select' src='' id='blue-5' style='background-color:black; float:right'>                                                                    
+                   
+    </div>
+    <div id='red-team-container' class='col-lg-1 col-md-1 col-sm-2 pull-right selected-hero-container' style='background-color:red'>
+        
+        <img class='hero-select' src='' id='red-1' style='background-color:black'>
+        <img class='hero-select' src='' id='red-2' style='background-color:black'>
+        <img class='hero-select' src='' id='red-3' style='background-color:black'>
+        <img class='hero-select' src='' id='red-4' style='background-color:black'>
+        <img class='hero-select' src='' id='red-5' style='background-color:black'>
+
+
+    </div>
+</div>
+
+
+<div id='hero-container' class='col-lg-10 col-lg-offset-1 col-md-10 col-md-offset-1 col-sm-8 col-sm-offset-2' style='padding-left:5%'>
+        {% for hero in heroes %}
+                <img class='img-responsive hero-image' src ={{league_of_legends_champion_static_data_url}}{{hero.image_name}} style='float:left' title={{hero.name}} disabled=false value={{hero.id}}> 
+        {% endfor %}
+</div>
 
 {% endblock %}
 
 <script>
     $(document).ready(function() {
 
-        $('#match_form').on('submit', function(event) {
-            formdata = new FormData($(this).get(0));
+
+        $('#hero-container').selectable({
+            autoRefresh: false,
+        });
+        $('.selected-hero-container').selectable({
+            stop: function() {
+                var selected_hero_element = $('.hero-image.ui-selected');
+                var target_player_slot = $('.hero-select.ui-selected');
+
+                target_player_slot.attr('src', selected_hero_element.attr('src'));
+                target_player_slot.attr('title', selected_hero_element.attr('title'));
+                target_player_slot.attr('value', selected_hero_element.attr('value'));
+
+                jQuery.each($('.chosen-hero'), function(key, el) {
+                    jQuery(el).removeClass('chosen-hero');
+                })  
+                
+                jQuery.each($('.hero-select'), function(key, el) {
+                    var value = jQuery(el).attr('value');
+                    $('.hero-image[value='+value+']').addClass('chosen-hero');
+                })
+
+                target_player_slot.removeClass('ui-selected');
+                selected_hero_element.removeClass('ui-selected');
+                
+            },
+        });
+
+
+        $('#submit-id-match-submit').click(function(event) {
+
+            var data = {};
             event.preventDefault();
-            $.ajax({
-                url: $(this).attr('action'),
-                type: $(this).attr('method'),
-                data: formdata,
-                processData: false,
-                contentType: false,
+            
+            jQuery.each($('.hero-select'), function(key, el) {
+                var element = jQuery(el);
+                var hero_id = element.attr('value');
+                var player_id = element.attr('id');
+
+                data[player_id] = hero_id
+            });
+            data['csrfmiddlewaretoken'] = $("input[name=csrfmiddlewaretoken]").val();
+            console.log(data)
+            
+
+            jQuery.ajax({
+                url: "{% url 'brain_view' %}",
+                type: 'POST',
+                data: data,
 
                 success: function(response) {
-                    $('#response').html("<h2>"+response+"</h2>");
+                    $('#response').attr('aria-valuenow',response)
+                    $('#response').attr('style','width:'+response+'%;')
+
+                    $('#response').html(response);
                 },
                 error: function(response) {
-                    $('#response').html("<h2>NOPE</h2>")
+                    $('#response').html('NOPE')
                 },
 
             })

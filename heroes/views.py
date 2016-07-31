@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from heroes.utils import request_all_champion_info, request_champion_details, get_all_champion_details
 from django.views.generic import TemplateView
-from heroes.models import Hero, HeroTag
+from heroes.models import Hero
 
 # Create your views here.
 class HeroList(TemplateView):
@@ -29,7 +29,6 @@ class HeroDetail(TemplateView):
         hero_tags = HeroTag.objects.filter(hero = hero)
         print 'HERO TAGS: ', hero_tags,'FOR HERO, ', hero
         context['hero'] = hero
-        context['tags'] = hero_tags
         return context
 
 
