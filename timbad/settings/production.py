@@ -7,12 +7,13 @@ DATABASES = settings.DATABASES
 DEBUG = False
 TEMPLATE_DEBUG = False
 
+#PRODUCTION SPECFIC APPS
 base.INSTALLED_APPS += [
     'whitenoise',
 ]
 
 #STATIC FILE MANAGEMENT
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.django.GzipManifestStaticFilesStorage'
 STATIC_ROOT = os.path.join(base.BASE_DIR,'staticfiles')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = (
