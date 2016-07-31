@@ -128,7 +128,7 @@ DATABASES['default'] = dj_database_url.config(default = 'postgres://dmfctpoqwzlr
 
 STATIC_URL = '/static_files/'
 STATIC_ROOT = 'static'
-STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static_files'),)
+STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
 
 TEMPLATE_DIRS=(
     os.path.join(BASE_DIR, 'templates'),
