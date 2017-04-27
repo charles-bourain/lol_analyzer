@@ -1,1 +1,1 @@
-# timbad
+# League of Legends Analyzer
